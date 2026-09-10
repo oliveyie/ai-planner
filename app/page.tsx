@@ -1,5 +1,5 @@
-import { CalendarShell } from "@/src/components/calendar/CalendarShell";
+import { PlannerApp } from "@/src/components/planner/PlannerApp";
 
 export default function Home() {
-  return <CalendarShell />;
+  return <PlannerApp />;
 }

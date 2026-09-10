@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useState } from "react";
 import {
   addDays,
   addMonths,
@@ -8,8 +8,6 @@ import {
   formatWeekRangeLabel,
   parseISODate,
 } from "@/src/lib/date-utils";
-import { getActiveGoal, getLatestPlan, saveGoal, savePlan } from "@/src/lib/db";
-import { createExampleGoalAndPlan } from "@/src/lib/fixtures/example-plan";
 import { flattenTasks, groupTasksByDate } from "@/src/lib/plan-utils";
 import type { Goal, Plan } from "@/src/lib/types";
 import { AgendaList } from "./AgendaList";
@@ -20,51 +18,11 @@ type ViewMode = "week" | "month" | "agenda";
 
 const VIEW_MODES: ViewMode[] = ["week", "month", "agenda"];
 
-export function CalendarShell() {
-  const [goal, setGoal] = useState<Goal | null>(null);
-  const [plan, setPlan] = useState<Plan | null>(null);
-  const [loading, setLoading] = useState(true);
+export function CalendarShell({ goal, plan }: { goal: Goal; plan: Plan }) {
   const [view, setView] = useState<ViewMode>("month");
-  const [anchorDate, setAnchorDate] = useState<Date>(new Date());
-  const initialized = useRef(false);
+  const [anchorDate, setAnchorDate] = useState<Date>(() => parseISODate(goal.startDate));
 
-  useEffect(() => {
-    // Guards against React Strict Mode's double-invoked effect in dev: without
-    // this, two concurrent seed-if-empty calls can race into creating two
-    // active goals. The ref (not a `cancelled`-flag/cleanup pair) is what
-    // makes this safe — a cleanup-based flag would get set by Strict Mode's
-    // simulated-unmount cleanup before this same run's async work resolves,
-    // permanently suppressing the state update that ends the loading state.
-    if (initialized.current) return;
-    initialized.current = true;
-
-    (async () => {
-      let activeGoal = await getActiveGoal();
-      let activePlan = activeGoal ? await getLatestPlan(activeGoal.id) : undefined;
-
-      if (!activeGoal || !activePlan) {
-        const seeded = createExampleGoalAndPlan(new Date());
-        await saveGoal(seeded.goal);
-        await savePlan(seeded.plan);
-        activeGoal = seeded.goal;
-        activePlan = seeded.plan;
-      }
-
-      setGoal(activeGoal);
-      setPlan(activePlan);
-      setAnchorDate(parseISODate(activeGoal.startDate));
-      setLoading(false);
-    })();
-  }, []);
-
-  const tasksByDate = useMemo(() => {
-    if (!plan) return new Map();
-    return groupTasksByDate(flattenTasks(plan));
-  }, [plan]);
-
-  if (loading || !goal || !plan) {
-    return <div className="p-8 text-sm text-foreground/60">Loading your plan…</div>;
-  }
+  const tasksByDate = groupTasksByDate(flattenTasks(plan));
 
   const label =
     view === "month"
@@ -80,10 +38,9 @@ export function CalendarShell() {
   }
 
   return (
-    <div className="flex flex-col gap-4 p-6">
-      <header className="flex flex-col gap-1">
+    <div className="flex flex-col gap-4">
+      <header>
         <h1 className="text-xl font-semibold">{goal.title}</h1>
-        <p className="text-sm text-foreground/70">{plan.summary}</p>
       </header>
 
       <div className="flex flex-wrap items-center justify-between gap-3">

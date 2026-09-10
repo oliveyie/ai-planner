@@ -3,11 +3,8 @@
 // generation exists (that's step 3).
 
 import { addDays, startOfWeek, toISODate, toISODateTime } from "../date-utils";
+import { makeId } from "../ids";
 import type { Goal, Phase, Plan, Task, TaskType, Week } from "../types";
-
-function makeId(prefix: string): string {
-  return `${prefix}_${crypto.randomUUID()}`;
-}
 
 function scheduledTask(params: {
   weekStart: Date;

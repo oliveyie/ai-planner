@@ -182,9 +182,9 @@ None currently — the four open questions from the previous iteration (clarify-
 
 ## 10. Suggested build order
 
-1. Data model + IndexedDB persistence + static calendar UI shell (seed with a hand-written example plan, no LLM yet).
-2. Google OAuth connect flow + freebusy fetch, rendering existing busy blocks on the calendar shell as its own standalone step — this should work and look complete before a goal ever exists (still no LLM).
-3. Goal entry + wire up `generatePlan()` — this is where the generate-then-critique-and-revise pair (§5 steps 2-3) gets built and tested — + the deterministic scheduling pass against fetched busy blocks → rendered **draft** calendar with real scheduled times. Worth testing against goals from a few different domains here (marathon, a project, a skill) specifically because that's what the critique pass exists to keep consistent.
+1. Data model + IndexedDB persistence + static calendar UI shell (seed with a hand-written example plan, no LLM yet). **Done.**
+2. Google OAuth connect flow + freebusy fetch, rendering existing busy blocks on the calendar shell as its own standalone step — this should work and look complete before a goal ever exists (still no LLM). **Deferred** — needs a Google Cloud OAuth Client ID/Secret that didn't exist yet when step 3 was ready to start. Reordered after step 3/4 rather than blocking on it: the scheduler (§5 step 4) takes `BusyBlock[]` as a plain input, and an empty array (no calendar connected) is a valid value — everything just schedules at its preferred time with nothing to avoid. Revisit once Google credentials exist.
+3. Goal entry + wire up `generatePlan()` — this is where the generate-then-critique-and-revise pair (§5 steps 2-3) gets built and tested — + the deterministic scheduling pass against fetched busy blocks (an empty list, per the note above, until step 2 is done) → rendered **draft** calendar with real scheduled times. Worth testing against goals from a few different domains here (marathon, a project, a skill) specifically because that's what the critique pass exists to keep consistent.
 4. Chat panel + `refinePlan()` — reuses the same generate-then-critique pair from step 3 — constraint history, regeneration, re-scheduling, diff highlighting. Still all draft, all local.
-5. Explicit "push to Google Calendar" action, one-way, to a dedicated calendar.
+5. Explicit "push to Google Calendar" action, one-way, to a dedicated calendar. Also needs Google OAuth (step 2), so also blocked until then.
 6. Polish: multiple goals, task completion tracking, editing, conflict-resolution UX.
