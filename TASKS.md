@@ -75,3 +75,23 @@ Entering a goal (tried against **at least one non-fitness example**, e.g. "learn
 - "Create an AI side project" → tasks like "Brainstorm project ideas", "List technical requirements", "Install necessary software".
 
 Both showed sensible `Plan.assumptions` (e.g. "Assumed a beginner starting point — tell me your current level and I can tailor this further"), and a page reload after generation kept the same goal/plan rather than reverting to the goal-entry form (persistence confirmed with real, not fixture, data). One test-script bug found along the way (not an app bug): `getByRole('button', { name: 'Month' })` doesn't match the view-toggle buttons because their accessible name is the lowercase `"month"` — only the CSS `capitalize` class makes it look capitalized on screen.
+
+Since step 3, the flow was reshaped mid-stream based on product feedback, ahead of formally starting step 4:
+- The goal-entry form was simplified from a 3-field form (title + two date pickers) to a single chat-style textarea — the date fields were redundant with defaults the app already applies (today for start, LLM-estimated for target).
+- A `ChatTranscript` was added: the assistant's response (a deterministic prose outline built from the generated `Plan`, not a separate LLM call) now appears *before* the calendar, not just a small assumptions box in the calendar header.
+- The critique prompt (§5 step 3) was strengthened with a deterministic date-range violation checker (`findDateRangeViolations` in `generate-plan.ts`) after real generations were observed producing internally-inconsistent dates (e.g. a phase landing in 2028 for a goal whose own summary said "3 months"). Violations are computed in code and handed to the critique pass as ground truth, with a final safety-net note appended to `assumptions` if any survive.
+
+# Task breakdown — Step 4
+
+SPEC.md §10 step 4: *"Chat panel + `refinePlan()` ... constraint history, regeneration, re-scheduling, diff highlighting."* Diff highlighting was explicitly deprioritized for this pass (see conversation) to keep scope tight — the calendar just updates to the new plan version without a visual diff.
+
+- [x] `refinePlan()` in `generate-plan.ts` — takes the goal (with the new constraint appended), the current `Plan`, and busy blocks; converts the current plan back to the semantic (LLM-facing) shape via `toLlmPlanForPrompt`, prompts the model to update it while changing as little else as possible, then reuses the same critique-and-schedule tail as `generatePlan()` (refactored into a shared `critiqueAndFinalize()` so the two paths can't drift on the date-range rules).
+- [x] `app/api/plan/refine/route.ts` — appends the new message to `Goal.constraints` server-side, calls `refinePlan()`, backfills `targetDate` the same way `generate` does.
+- [x] `src/components/chat/ChatComposer.tsx` — textarea + Send button, Enter-to-send, disabled/loading state while refining, inline error on failure.
+- [x] `PlannerApp.tsx`: `handleRefine()` — optimistically appends the user's message to the transcript and persists it before the fetch (so it stays visible even if the refine call fails), then on success saves the updated `Goal`/`Plan`/assistant message and re-renders the calendar with the new plan version.
+
+## Definition of done for step 4
+
+Typing a follow-up in the chat composer (e.g. a day-of-week constraint) produces an updated plan version, appends both the user's message and a new assistant outline to the transcript, and the calendar visibly reflects the change — all persisted to IndexedDB.
+
+**Status: done**, verified in a real browser against the real OpenAI API. Sent "Only do long runs on Sundays, no exceptions." after generating a Seattle Marathon plan: `Goal.constraints` recorded the message, `Plan.version` went from 1 to 2, 4 chat messages persisted (goal → outline → refinement → updated outline), and the two long-run tasks visibly moved on the calendar from Saturday to Sunday between the "before" and "after" screenshots.

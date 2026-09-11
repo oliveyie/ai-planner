@@ -1,7 +1,8 @@
 // Server-only. Generation pipeline per SPEC.md §5 steps 2-4: generate a
 // semantic plan, run a bounded critique-and-revise pass, then hand the
 // result to the deterministic scheduler. Never imported from a client
-// component — only from the app/api/plan/generate route handler.
+// component — only from the app/api/plan/generate and app/api/plan/refine
+// route handlers.
 
 import OpenAI from "openai";
 import type { ZodType } from "zod";
@@ -29,6 +30,7 @@ function getClient(): OpenAI {
 }
 
 type ChatMessage = { role: "system" | "user"; content: string };
+type GoalInput = Pick<Goal, "id" | "title" | "startDate" | "targetDate" | "constraints">;
 
 async function callStructured<T>(
   schema: ZodType<T>,
@@ -72,11 +74,9 @@ async function callStructured<T>(
   throw new Error(`${jsonSchemaName}: unreachable`);
 }
 
-const GENERATE_SYSTEM_PROMPT = `You are a planning assistant. Given a high-level goal, produce a phased, dated plan broken into concrete tasks that could be placed on a calendar.
-
-The goal can be about anything: fitness, a creative or technical project, learning a skill, career, or something else entirely. Do not assume it is fitness-related unless the goal itself implies that. Choose phase names, week focuses, and task titles appropriate to this specific goal — for example, "Research"/"Prototype"/"Polish" for a project, "Fundamentals"/"Practice"/"Refinement" for a skill, or training-specific phases for a fitness goal. Never reuse fitness vocabulary for a non-fitness goal.
-
-Rules:
+// Shared between the initial generation prompt and the refine prompt, so the
+// two paths can never drift on things like date-range rules.
+const PLAN_RULES = `Rules:
 - All dates are ISO strings, "YYYY-MM-DD".
 - Honor every constraint listed, exactly.
 - If the goal did not specify a target date, estimate a reasonable one from context (typical timelines for this kind of goal) and put it in "targetDate". If the goal did specify one, set "targetDate" to null.
@@ -85,7 +85,13 @@ Rules:
 - Use the "type" field on each task appropriately: "task" for a normal concrete activity, "milestone" for a fixed checkpoint/deadline, "review" for a periodic check-in, "rest" for a deliberate break.
 - Only set "preferredDaysOfWeek" on a task when a constraint specifically restricts which days it can happen on.`;
 
-function buildGenerateMessages(goal: Pick<Goal, "title" | "startDate" | "targetDate" | "constraints">): ChatMessage[] {
+const GENERATE_SYSTEM_PROMPT = `You are a planning assistant. Given a high-level goal, produce a phased, dated plan broken into concrete tasks that could be placed on a calendar.
+
+The goal can be about anything: fitness, a creative or technical project, learning a skill, career, or something else entirely. Do not assume it is fitness-related unless the goal itself implies that. Choose phase names, week focuses, and task titles appropriate to this specific goal — for example, "Research"/"Prototype"/"Polish" for a project, "Fundamentals"/"Practice"/"Refinement" for a skill, or training-specific phases for a fitness goal. Never reuse fitness vocabulary for a non-fitness goal.
+
+${PLAN_RULES}`;
+
+function buildGenerateMessages(goal: GoalInput): ChatMessage[] {
   return [
     { role: "system", content: GENERATE_SYSTEM_PROMPT },
     {
@@ -95,6 +101,30 @@ function buildGenerateMessages(goal: Pick<Goal, "title" | "startDate" | "targetD
         startDate: goal.startDate,
         targetDate: goal.targetDate ?? null,
         constraints: goal.constraints,
+      }),
+    },
+  ];
+}
+
+const REFINE_SYSTEM_PROMPT = `You are updating an existing plan based on new feedback from the user, for the same goal as before (never assume it's fitness-related unless it actually is).
+
+You will receive the goal, the full ordered list of constraints the user has given so far (including the newest one), and the current plan. Produce an updated plan that satisfies every constraint while changing as little else as possible — keep phase names, structure, and any unaffected tasks the same where the new constraint doesn't require touching them.
+
+${PLAN_RULES}`;
+
+function buildRefineMessages(goal: GoalInput, currentPlan: LlmPlan): ChatMessage[] {
+  return [
+    { role: "system", content: REFINE_SYSTEM_PROMPT },
+    {
+      role: "user",
+      content: JSON.stringify({
+        goal: {
+          title: goal.title,
+          startDate: goal.startDate,
+          targetDate: goal.targetDate ?? null,
+          constraints: goal.constraints,
+        },
+        currentPlan,
       }),
     },
   ];
@@ -141,7 +171,7 @@ If everything looks right (including an empty programmaticallyDetectedDateIssues
 Otherwise respond with approved: false, a brief explanation in notes, and a corrected full plan in revisedPlan that fixes every issue found (same schema as the draft plan).`;
 
 function buildCritiqueMessages(
-  goal: Pick<Goal, "title" | "startDate" | "targetDate" | "constraints">,
+  goal: GoalInput,
   draft: LlmPlan,
   programmaticallyDetectedDateIssues: string[],
 ): ChatMessage[] {
@@ -197,12 +227,55 @@ function toDomainPhase(llmPhase: LlmPhase): Phase {
   };
 }
 
-export async function generatePlan(
-  goal: Pick<Goal, "id" | "title" | "startDate" | "targetDate" | "constraints">,
-  busyBlocks: BusyBlock[],
-): Promise<{ plan: Plan; resolvedTargetDate?: string }> {
-  const draft = await callStructured(llmPlanSchema, planJsonSchema, "plan", buildGenerateMessages(goal));
+// The reverse direction, for feeding the current plan back into the refine
+// prompt as context — strips ids/scheduling fields, same rationale as
+// toDomainTask/Week/Phase: the LLM only ever sees/produces the semantic shape.
+function toLlmTaskForPrompt(task: Task): LlmTask {
+  return {
+    title: task.title,
+    description: task.description ?? null,
+    durationMinutes: task.durationMinutes ?? null,
+    type: task.type,
+    preferredDate: task.preferredDate,
+    preferredDaysOfWeek: task.preferredDaysOfWeek ?? null,
+  };
+}
 
+function toLlmWeekForPrompt(week: Week): LlmWeek {
+  return {
+    weekNumber: week.weekNumber,
+    startDate: week.startDate,
+    focus: week.focus,
+    tasks: week.tasks.map(toLlmTaskForPrompt),
+  };
+}
+
+function toLlmPhaseForPrompt(phase: Phase): LlmPhase {
+  return {
+    name: phase.name,
+    startDate: phase.startDate,
+    endDate: phase.endDate,
+    weeks: phase.weeks.map(toLlmWeekForPrompt),
+  };
+}
+
+function toLlmPlanForPrompt(goal: GoalInput, plan: Plan): LlmPlan {
+  return {
+    summary: plan.summary,
+    assumptions: plan.assumptions,
+    targetDate: goal.targetDate ?? null,
+    phases: plan.phases.map(toLlmPhaseForPrompt),
+  };
+}
+
+// Shared tail for both generate and refine: critique-and-revise (bounded to
+// one pass), the date-range safety net, then the deterministic scheduler.
+async function critiqueAndFinalize(
+  goal: GoalInput,
+  draft: LlmPlan,
+  busyBlocks: BusyBlock[],
+  version: number,
+): Promise<{ plan: Plan; resolvedTargetDate?: string }> {
   const draftViolations = findDateRangeViolations(draft, goal.startDate, goal.targetDate ?? draft.targetDate ?? null);
 
   const critique = await callStructured(
@@ -246,7 +319,7 @@ export async function generatePlan(
   const plan: Plan = {
     id: makeId("plan"),
     goalId: goal.id,
-    version: 1,
+    version,
     summary: finalLlmPlan.summary,
     assumptions: finalLlmPlan.assumptions,
     phases,
@@ -254,4 +327,27 @@ export async function generatePlan(
   };
 
   return { plan, resolvedTargetDate: finalLlmPlan.targetDate ?? undefined };
+}
+
+export async function generatePlan(
+  goal: GoalInput,
+  busyBlocks: BusyBlock[],
+): Promise<{ plan: Plan; resolvedTargetDate?: string }> {
+  const draft = await callStructured(llmPlanSchema, planJsonSchema, "plan", buildGenerateMessages(goal));
+  return critiqueAndFinalize(goal, draft, busyBlocks, 1);
+}
+
+export async function refinePlan(
+  goal: GoalInput,
+  currentPlan: Plan,
+  busyBlocks: BusyBlock[],
+): Promise<{ plan: Plan; resolvedTargetDate?: string }> {
+  const currentLlmPlan = toLlmPlanForPrompt(goal, currentPlan);
+  const draft = await callStructured(
+    llmPlanSchema,
+    planJsonSchema,
+    "plan",
+    buildRefineMessages(goal, currentLlmPlan),
+  );
+  return critiqueAndFinalize(goal, draft, busyBlocks, currentPlan.version + 1);
 }
