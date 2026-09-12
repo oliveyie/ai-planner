@@ -66,25 +66,37 @@ export function EmptyCalendarPreview({ dimmed = false }: { dimmed?: boolean }) {
     });
   }
 
+  function goToToday() {
+    setAnchorDate(new Date());
+  }
+
   return (
     <div className={dimmed ? "pointer-events-none select-none opacity-40 blur-[1px]" : ""}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 pb-2">
-        <div className="flex items-center rounded-full border border-[#eee4d5] bg-white px-3 py-1.5 font-quicksand text-sm font-bold text-slate-700 shadow-xs">
+        <div className="flex items-center gap-2">
           <button
-            aria-label="Previous"
-            onClick={() => shift(-1)}
-            className="p-1 text-slate-400 transition-colors hover:text-slate-700"
+            onClick={goToToday}
+            className="rounded-full border border-[#eee4d5] bg-white px-3.5 py-1.5 font-quicksand text-xs font-bold text-slate-700 shadow-xs transition-colors hover:bg-slate-50"
           >
-            ←
+            Today
           </button>
-          <span className="min-w-40 px-3 text-center tracking-tight">{label}</span>
-          <button
-            aria-label="Next"
-            onClick={() => shift(1)}
-            className="p-1 text-slate-400 transition-colors hover:text-slate-700"
-          >
-            →
-          </button>
+          <div className="flex items-center rounded-full border border-[#eee4d5] bg-white px-3 py-1.5 font-quicksand text-sm font-bold text-slate-700 shadow-xs">
+            <button
+              aria-label="Previous"
+              onClick={() => shift(-1)}
+              className="p-1 text-slate-400 transition-colors hover:text-slate-700"
+            >
+              ←
+            </button>
+            <span className="min-w-40 px-3 text-center tracking-tight">{label}</span>
+            <button
+              aria-label="Next"
+              onClick={() => shift(1)}
+              className="p-1 text-slate-400 transition-colors hover:text-slate-700"
+            >
+              →
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center rounded-full border border-[#ede3d3] bg-[#f8f5ee] p-1 font-quicksand text-xs font-bold text-slate-400">

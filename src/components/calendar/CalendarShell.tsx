@@ -54,6 +54,10 @@ export function CalendarShell({
     );
   }
 
+  function goToToday() {
+    setAnchorDate(new Date());
+  }
+
   return (
     <div className="flex flex-col gap-3">
       <header className="flex flex-wrap items-start justify-between gap-3 px-2">
@@ -73,6 +77,13 @@ export function CalendarShell({
       <div className="flex flex-col gap-3 rounded-3xl border border-[#EFE5D8] bg-surface-card/90 p-4 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-5">
         <div className="flex flex-col items-start justify-between gap-3 px-2 sm:flex-row sm:items-center">
           <div className="flex flex-wrap items-center gap-2.5">
+            <button
+              onClick={goToToday}
+              disabled={view === "agenda"}
+              className="rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 font-quicksand text-xs font-bold text-clay shadow-sm transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
+            >
+              Today
+            </button>
             <div className="flex items-center gap-2 rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 shadow-sm">
               <button
                 onClick={() => shift(-1)}
