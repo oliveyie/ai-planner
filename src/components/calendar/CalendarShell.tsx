@@ -1,20 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import {
-  addDays,
-  addMonths,
-  formatMonthLabel,
-  formatWeekRangeLabel,
-  parseISODate,
-} from "@/src/lib/date-utils";
+import { addDays, addMonths, formatMonthLabel, formatWeekRangeLabel } from "@/src/lib/date-utils";
 import { flattenTasks, groupBusyBlocksByDate, groupTasksByDate } from "@/src/lib/plan-utils";
-import { TASK_TYPE_STYLES } from "@/src/lib/task-colors";
-import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, Plan } from "@/src/lib/types";
+import type { BusyBlock, CalendarConnection, Goal, Plan } from "@/src/lib/types";
 import { AgendaList } from "./AgendaList";
 import { CalendarLegend } from "./CalendarLegend";
 import { MonthView } from "./MonthView";
-import { PushControls } from "./PushControls";
 import { WeekView } from "./WeekView";
 
 type ViewMode = "week" | "month" | "agenda";
@@ -27,17 +19,21 @@ export function CalendarShell({
   busyBlocks = [],
   connections = [],
   onNewGoal,
-  onPush,
+  hideHeader = false,
 }: {
   goal: Goal;
   plan: Plan;
   busyBlocks?: BusyBlock[];
   connections?: CalendarConnection[];
   onNewGoal?: () => void;
-  onPush?: (provider: CalendarProvider) => Promise<void>;
+  hideHeader?: boolean;
 }) {
-  const [view, setView] = useState<ViewMode>("month");
-  const [anchorDate, setAnchorDate] = useState<Date>(() => parseISODate(goal.startDate));
+  const [view, setView] = useState<ViewMode>("week");
+  // Today, not goal.startDate: the latter can be days/weeks in the past by
+  // the time this renders (e.g. a returning visit), which previously left
+  // the default Week view stranded on the plan's start week — Month view
+  // masked this by coincidence (still the current month) while Week didn't.
+  const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
 
   const tasksByDate = groupTasksByDate(flattenTasks(plan));
   const busyBlocksByDate = groupBusyBlocksByDate(busyBlocks);
@@ -60,80 +56,79 @@ export function CalendarShell({
   }
 
   return (
-    <div className="flex flex-col gap-3">
-      <header className="flex flex-wrap items-start justify-between gap-3 px-2">
-        <h1 className="font-quicksand text-xl font-bold tracking-tight text-foreground">{goal.title}</h1>
-        {onNewGoal && (
-          <button
-            onClick={onNewGoal}
-            className="font-quicksand text-sm font-semibold text-clay-light underline underline-offset-2 hover:text-clay"
-          >
-            + New Goal
-          </button>
-        )}
-      </header>
-
-      {onPush && <PushControls connections={connections} onPush={onPush} />}
-
-      <div className="flex flex-col gap-3 rounded-3xl border border-[#EFE5D8] bg-surface-card/90 p-4 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-5">
-        <div className="flex flex-col items-start justify-between gap-3 px-2 sm:flex-row sm:items-center">
-          <div className="flex flex-wrap items-center gap-2.5">
+    <div className="flex h-full flex-col gap-3">
+      {!hideHeader && (
+        <header className="flex flex-wrap items-start justify-between gap-3 px-2">
+          <h1 className="font-quicksand text-xl font-bold tracking-tight text-foreground">{goal.title}</h1>
+          {onNewGoal && (
             <button
-              onClick={goToToday}
-              disabled={view === "agenda"}
-              className="rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 font-quicksand text-xs font-bold text-clay shadow-sm transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
+              onClick={onNewGoal}
+              className="font-quicksand text-sm font-semibold text-clay-light underline underline-offset-2 hover:text-clay"
             >
-              Today
+              + New Goal
             </button>
-            <div className="flex items-center gap-2 rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 shadow-sm">
-              <button
-                onClick={() => shift(-1)}
-                disabled={view === "agenda"}
-                aria-label="Previous"
-                className="flex h-6 w-6 items-center justify-center rounded-full text-clay transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
-              >
-                ←
-              </button>
-              <span className="min-w-32 px-1 text-center font-quicksand text-sm font-bold text-foreground">
-                {label}
-              </span>
-              <button
-                onClick={() => shift(1)}
-                disabled={view === "agenda"}
-                aria-label="Next"
-                className="flex h-6 w-6 items-center justify-center rounded-full text-clay transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
-              >
-                →
-              </button>
-            </div>
+          )}
+        </header>
+      )}
 
-            <div className="inline-flex rounded-full border border-[#EDE2D4]/70 bg-surface-low p-1">
-              {VIEW_MODES.map((mode) => (
-                <button
-                  key={mode}
-                  onClick={() => setView(mode)}
-                  className={`rounded-full px-3 py-1 font-quicksand text-xs font-bold capitalize transition-all ${
-                    view === mode ? "bg-surface-card text-foreground shadow-sm" : "text-clay hover:text-foreground"
-                  }`}
-                >
-                  {mode}
-                </button>
-              ))}
-            </div>
+      <div className="flex h-full flex-col gap-3 rounded-3xl border border-[#EFE5D8] bg-surface-card/90 p-4 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-5">
+        <div className="flex items-center justify-between gap-2 px-2">
+          <span className="font-quicksand text-sm font-bold text-foreground">
+            {connections.length > 0 ? "Compare with your Calendar" : "Your Calendar"}
+          </span>
+          {connections.length > 0 && (
+            <span className="rounded-full bg-sage px-2 py-0.5 font-quicksand text-[11px] font-bold text-sage-dark">
+              Live Sync
+            </span>
+          )}
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5 px-2">
+          <button
+            onClick={goToToday}
+            disabled={view === "agenda"}
+            className="rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 font-quicksand text-xs font-bold text-clay shadow-sm transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
+          >
+            Today
+          </button>
+          <div className="flex items-center gap-2 rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 shadow-sm">
+            <button
+              onClick={() => shift(-1)}
+              disabled={view === "agenda"}
+              aria-label="Previous"
+              className="flex h-6 w-6 items-center justify-center rounded-full text-clay transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
+            >
+              ←
+            </button>
+            <span className="min-w-32 px-1 text-center font-quicksand text-sm font-bold text-foreground">
+              {label}
+            </span>
+            <button
+              onClick={() => shift(1)}
+              disabled={view === "agenda"}
+              aria-label="Next"
+              className="flex h-6 w-6 items-center justify-center rounded-full text-clay transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
+            >
+              →
+            </button>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 font-quicksand text-xs font-medium text-clay">
-            <span className="font-bold text-clay-light">Plan:</span>
-            {(Object.keys(TASK_TYPE_STYLES) as Array<keyof typeof TASK_TYPE_STYLES>).map((type) => (
-              <div key={type} className="flex items-center gap-1.5">
-                <span className={`h-2.5 w-2.5 rounded-full ${TASK_TYPE_STYLES[type].dot}`} />
-                <span>{TASK_TYPE_STYLES[type].label}</span>
-              </div>
+          <div className="inline-flex rounded-full border border-[#EDE2D4]/70 bg-surface-low p-1">
+            {VIEW_MODES.map((mode) => (
+              <button
+                key={mode}
+                onClick={() => setView(mode)}
+                className={`rounded-full px-3 py-1 font-quicksand text-xs font-bold capitalize transition-all ${
+                  view === mode ? "bg-surface-card text-foreground shadow-sm" : "text-clay hover:text-foreground"
+                }`}
+              >
+                {mode}
+              </button>
             ))}
           </div>
         </div>
 
-        <CalendarLegend busyBlocks={busyBlocks} />
+        <CalendarLegend busyBlocks={busyBlocks} showPlan />
 
         {view === "week" && (
           <WeekView anchorDate={anchorDate} tasksByDate={tasksByDate} busyBlocksByDate={busyBlocksByDate} />

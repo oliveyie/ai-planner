@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from "react";
 import { CalendarShell } from "@/src/components/calendar/CalendarShell";
 import { ConnectCalendarScreen } from "@/src/components/calendar/ConnectCalendarScreen";
 import { EmptyCalendarPreview } from "@/src/components/calendar/EmptyCalendarPreview";
+import { PlanSummaryCard } from "@/src/components/calendar/PlanSummaryCard";
+import { PushControls } from "@/src/components/calendar/PushControls";
 import { ChatComposer } from "@/src/components/chat/ChatComposer";
 import { ChatTranscript } from "@/src/components/chat/ChatTranscript";
 import { GoalEntryForm } from "@/src/components/goal/GoalEntryForm";
@@ -33,6 +35,12 @@ import type {
 
 const SKIP_STORAGE_KEY = "whimsycal:calendarConnectSkipped";
 const DEFAULT_HORIZON_DAYS = 180; // used before a target date is known yet
+// How far back to also fetch busy blocks for, purely for display context —
+// without this, navigating the calendar back a week/month looks like those
+// days were wide open even when they weren't. Harmless for scheduling itself:
+// tasks are only ever placed on today-or-later dates, so a past busy block
+// essentially never overlaps a real candidate slot.
+const LOOKBACK_DAYS = 45;
 
 // Reads the OAuth callback's token fragment (see src/lib/oauth-routes.ts) —
 // deliberately a fragment, not a query string, since fragments are never
@@ -92,6 +100,14 @@ export function PlannerApp() {
       const history = activeGoal ? await getChatMessages(activeGoal.id) : [];
       const allConnections = await getAllCalendarConnections();
 
+      if (activeGoal && allConnections.length > 0) {
+        const horizonStart = addDays(new Date(), -LOOKBACK_DAYS);
+        const horizonEnd = activeGoal.targetDate
+          ? parseISODate(activeGoal.targetDate)
+          : addDays(new Date(), DEFAULT_HORIZON_DAYS);
+        setBusyBlocks(await fetchCalendarEvents(horizonStart, horizonEnd));
+      }
+
       setGoal(activeGoal ?? null);
       setPlan(activePlan ?? null);
       setMessages(history);
@@ -110,7 +126,10 @@ export function PlannerApp() {
     // Target date isn't known yet at this point, so fetch a generous default
     // horizon rather than a precise one — refine calls (below) can narrow it
     // once a target date exists.
-    const freshBusyBlocks = await fetchCalendarEvents(new Date(), addDays(new Date(), DEFAULT_HORIZON_DAYS));
+    const freshBusyBlocks = await fetchCalendarEvents(
+      addDays(new Date(), -LOOKBACK_DAYS),
+      addDays(new Date(), DEFAULT_HORIZON_DAYS),
+    );
 
     const response = await fetch("/api/plan/generate", {
       method: "POST",
@@ -166,10 +185,10 @@ export function PlannerApp() {
     await saveChatMessage(userMessage);
     setMessages((prev) => [...prev, userMessage]);
 
-    const horizonStart = new Date();
+    const horizonStart = addDays(new Date(), -LOOKBACK_DAYS);
     const horizonEnd = goal.targetDate
       ? parseISODate(goal.targetDate)
-      : addDays(horizonStart, DEFAULT_HORIZON_DAYS);
+      : addDays(new Date(), DEFAULT_HORIZON_DAYS);
     const freshBusyBlocks = await fetchCalendarEvents(horizonStart, horizonEnd);
 
     const response = await fetch("/api/plan/refine", {
@@ -271,19 +290,44 @@ export function PlannerApp() {
   return (
     <>
       <AppHeader connections={connections} />
-      <div className="w-full max-w-5xl mx-auto flex flex-col gap-8 px-4 sm:px-6 pb-16">
-        <div className="flex flex-col gap-3">
-          <ChatTranscript messages={messages} />
-          <ChatComposer onSend={handleRefine} />
+      <div className="w-full max-w-6xl mx-auto flex flex-col gap-5 px-4 sm:px-6 pb-16">
+        <header className="flex flex-wrap items-start justify-between gap-3 px-2 pt-2">
+          <h1 className="font-quicksand text-xl font-bold tracking-tight text-foreground">{goal.title}</h1>
+          <button
+            onClick={handleNewGoal}
+            className="font-quicksand text-sm font-semibold text-clay-light underline underline-offset-2 hover:text-clay"
+          >
+            + New Goal
+          </button>
+        </header>
+
+        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
+          <div className="lg:col-span-5">
+            <PlanSummaryCard goal={goal} plan={plan} />
+          </div>
+          <div className="lg:col-span-7">
+            <CalendarShell goal={goal} plan={plan} busyBlocks={busyBlocks} connections={connections} hideHeader />
+          </div>
         </div>
-        <CalendarShell
-          goal={goal}
-          plan={plan}
-          busyBlocks={busyBlocks}
-          connections={connections}
-          onNewGoal={handleNewGoal}
-          onPush={handlePush}
-        />
+
+        {connections.length > 0 && (
+          <div className="flex justify-end px-2">
+            <PushControls connections={connections} onPush={handlePush} />
+          </div>
+        )}
+
+        <section className="flex flex-col gap-3 rounded-3xl border border-[#EFE5D8] bg-surface-card/90 p-4 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-5">
+          <div className="flex items-center gap-2 border-b border-[#EDE2D4]/60 px-1 pb-3">
+            <span className="font-quicksand text-sm font-bold text-foreground">WhimsyCal Buddy</span>
+            <span className="h-1.5 w-1.5 rounded-full bg-sage-dark" />
+          </div>
+          {messages.length > 0 && (
+            <div className="max-h-72 overflow-y-auto px-1">
+              <ChatTranscript messages={messages} />
+            </div>
+          )}
+          <ChatComposer onSend={handleRefine} />
+        </section>
       </div>
     </>
   );

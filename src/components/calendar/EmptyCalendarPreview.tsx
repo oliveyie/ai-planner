@@ -16,6 +16,7 @@ import { groupBusyBlocksByDate } from "@/src/lib/plan-utils";
 import type { BusyBlock, CalendarConnection } from "@/src/lib/types";
 import { BusyBlockChip } from "./BusyBlockChip";
 import { CalendarLegend } from "./CalendarLegend";
+import { WeekView } from "./WeekView";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; // matches this app's Sunday-start week
 
@@ -82,8 +83,6 @@ export function EmptyCalendarPreview({
   const monthDays = Array.from({ length: monthDayCount }, (_, i) => addDays(monthGridStart, i));
 
   const weekStart = startOfWeek(anchorDate);
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
-
   const dayStart = startOfDay(anchorDate);
 
   const label =
@@ -189,6 +188,8 @@ export function EmptyCalendarPreview({
             <span className="font-quicksand text-sm font-semibold text-amber-500">Nothing scheduled yet</span>
           </div>
         )
+      ) : view === "week" ? (
+        <WeekView anchorDate={anchorDate} busyBlocksByDate={busyBlocksByDate} />
       ) : (
         <>
           <div className="mb-2 grid grid-cols-7 gap-3 text-center font-quicksand text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -197,14 +198,14 @@ export function EmptyCalendarPreview({
             ))}
           </div>
           <div className="grid grid-cols-7 gap-3">
-            {(view === "month" ? monthDays : weekDays).map((day) => (
+            {monthDays.map((day) => (
               <DayCell
                 key={toISODate(day)}
                 day={day}
                 today={today}
-                inMonth={view === "week" || day.getMonth() === anchorDate.getMonth()}
+                inMonth={day.getMonth() === anchorDate.getMonth()}
                 events={busyBlocksByDate.get(toISODate(day)) ?? []}
-                compactEvents={view === "month"}
+                compactEvents
               />
             ))}
           </div>

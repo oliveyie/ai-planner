@@ -74,3 +74,11 @@ export function formatWeekRangeLabel(anchor: Date): string {
 export function formatTimeLabel(date: Date): string {
   return date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 }
+
+// For hour-line labels on a time-grid week view — no minutes, unlike
+// formatTimeLabel, since it's always labeling an exact hour boundary.
+export function formatHourLabel(hour: number): string {
+  const date = new Date();
+  date.setHours(hour, 0, 0, 0);
+  return date.toLocaleTimeString(undefined, { hour: "numeric" });
+}
