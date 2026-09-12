@@ -10,7 +10,7 @@ export function BusyBlockChip({ block }: { block: BusyBlock }) {
   const time = `${formatTimeLabel(start)}–${formatTimeLabel(end)}`;
 
   return (
-    <div className="rounded border border-dashed border-foreground/20 bg-foreground/5 px-1.5 py-1 text-xs text-foreground/50">
+    <div className="rounded-lg border border-dashed border-clay-light/40 bg-surface-low/60 px-1.5 py-1 font-quicksand text-[11px] text-clay">
       {block.title ? (
         <>
           <div className="truncate">{block.title}</div>

@@ -1,26 +1,47 @@
 @import "tailwindcss";
 
+/* WhimsyCal design system, ported from the Stitch "Playful Goal Dashboard"
+   screen (project 729063316895781965). Light-only by design — the source
+   mockup has no dark variant, so one isn't invented here. */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #fdfbf7;
+  --foreground: #322a26;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+@theme {
+  --color-surface: #fffdf9;
+  --color-surface-low: #faf6ee;
+  --color-surface-card: #ffffff;
+  --color-peach: #ffede3;
+  --color-peach-dark: #d96b43;
+  --color-lavender: #f2ecfe;
+  --color-lavender-dark: #7053a8;
+  --color-buttercup: #fef7da;
+  --color-buttercup-dark: #a67c1e;
+  --color-sage: #e7f4eb;
+  --color-sage-dark: #3b7a57;
+  --color-sky: #e6f3fb;
+  --color-sky-dark: #2b749e;
+  --color-clay: #7c6a59;
+  --color-clay-light: #a89989;
+  --color-coral: #ff7b54;
+  --color-coral-hover: #f06b43;
+
+  --font-sans: var(--font-plus-jakarta-sans);
+  --font-quicksand: var(--font-quicksand);
+
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+  --radius-3xl: 2.25rem;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
 }

@@ -36,14 +36,14 @@ export function PushControls({
   }
 
   return (
-    <div className="flex flex-col gap-1">
-      <div className="flex gap-2">
+    <div className="flex flex-col gap-1 px-2">
+      <div className="flex flex-wrap gap-2">
         {connections.map((connection) => (
           <button
             key={connection.provider}
             onClick={() => handleClick(connection.provider)}
             disabled={pushingProvider !== null}
-            className="rounded border px-3 py-1.5 text-sm font-medium hover:bg-foreground/5 disabled:opacity-50"
+            className="rounded-full border border-coral/30 bg-peach/60 px-4 py-1.5 font-quicksand text-sm font-bold text-peach-dark shadow-sm transition-colors hover:bg-peach disabled:opacity-50"
           >
             {pushingProvider === connection.provider
               ? "Pushing…"
@@ -52,9 +52,11 @@ export function PushControls({
         ))}
       </div>
       {successProvider && (
-        <p className="text-xs text-green-600">Pushed to {PROVIDER_LABELS[successProvider]}.</p>
+        <p className="font-quicksand text-xs font-semibold text-sage-dark">
+          Pushed to {PROVIDER_LABELS[successProvider]}. 🌸
+        </p>
       )}
-      {error && <p className="text-xs text-red-600">{error}</p>}
+      {error && <p className="font-quicksand text-xs font-semibold text-peach-dark">{error}</p>}
     </div>
   );
 }

@@ -17,19 +17,31 @@ export function WeekView({
   const today = new Date();
 
   return (
-    <div className="grid grid-cols-7 gap-2">
+    <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
       {days.map((day) => {
         const key = toISODate(day);
         const tasks = tasksByDate.get(key) ?? [];
         const busyBlocks = busyBlocksByDate?.get(key) ?? [];
+        const isToday = isSameDay(day, today);
         return (
           <div
             key={key}
-            className={`flex min-h-40 flex-col gap-1 rounded border p-2 ${
-              isSameDay(day, today) ? "border-foreground/40" : "border-foreground/10"
+            className={`flex min-h-40 flex-col gap-1 rounded-2xl p-2 ${
+              isToday
+                ? "border-2 border-coral/50 bg-buttercup/50 shadow-sm"
+                : "border border-[#EDE2D4]/40 bg-surface-low/40"
             }`}
           >
-            <div className="text-xs font-medium text-foreground/60">{formatDayLabel(day)}</div>
+            {isToday ? (
+              <div className="flex items-center justify-between">
+                <span className="font-quicksand text-[11px] font-bold uppercase text-coral">Today</span>
+                <span className="flex h-5 w-5 items-center justify-center rounded-full bg-coral text-[11px] font-bold text-white">
+                  {day.getDate()}
+                </span>
+              </div>
+            ) : (
+              <div className="font-quicksand text-xs font-bold text-foreground">{formatDayLabel(day)}</div>
+            )}
             <div className="flex flex-col gap-1">
               {busyBlocks.map((block, i) => (
                 <BusyBlockChip key={`busy-${i}`} block={block} />

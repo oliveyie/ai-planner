@@ -3,9 +3,11 @@
 import { useEffect, useRef, useState } from "react";
 import { CalendarShell } from "@/src/components/calendar/CalendarShell";
 import { ConnectCalendarScreen } from "@/src/components/calendar/ConnectCalendarScreen";
+import { EmptyCalendarPreview } from "@/src/components/calendar/EmptyCalendarPreview";
 import { ChatComposer } from "@/src/components/chat/ChatComposer";
 import { ChatTranscript } from "@/src/components/chat/ChatTranscript";
 import { GoalEntryForm } from "@/src/components/goal/GoalEntryForm";
+import { AppHeader } from "@/src/components/layout/AppHeader";
 import { fetchCalendarEvents, pushPlanToCalendar } from "@/src/lib/calendar-api";
 import { addDays, parseISODate } from "@/src/lib/date-utils";
 import {
@@ -229,44 +231,60 @@ export function PlannerApp() {
   }
 
   if (loading) {
-    return <div className="p-8 text-sm text-foreground/60">Loading…</div>;
+    return (
+      <>
+        <AppHeader />
+        <div className="p-8 text-sm text-clay">Loading…</div>
+      </>
+    );
   }
 
   if (!goal || !plan) {
-    const errorBanner = connectError && (
-      <p className="p-4 text-sm text-red-600">Calendar connection failed: {connectError}</p>
-    );
+    // The connect prompt is a dismissible overlay on the (blank, dimmed)
+    // calendar preview, not a full-screen gate — the goal-entry section below
+    // is always visible/usable regardless of whether it's showing.
+    const showConnectModal = connections.length === 0 && !skippedConnect;
 
-    if (connections.length === 0 && !skippedConnect) {
-      return (
-        <div className="flex flex-col gap-4">
-          {errorBanner}
-          <ConnectCalendarScreen onSkip={handleSkipConnect} />
-        </div>
-      );
-    }
     return (
-      <div className="flex flex-col gap-4">
-        {errorBanner}
-        <GoalEntryForm onSubmit={handleCreateGoal} />
-      </div>
+      <>
+        <AppHeader connections={connections} />
+        <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-4 pb-10 sm:px-6">
+          {connectError && (
+            <p className="text-center text-sm text-peach-dark">Calendar connection failed: {connectError}</p>
+          )}
+
+          <main className="relative overflow-hidden rounded-[2.5rem] border border-[#f0e8dc] bg-surface-card/95 p-6 shadow-[0_8px_32px_-4px_rgba(184,150,120,0.08),0_2px_8px_-1px_rgba(184,150,120,0.04)] sm:p-8">
+            <EmptyCalendarPreview dimmed={showConnectModal} />
+            {showConnectModal && <ConnectCalendarScreen onSkip={handleSkipConnect} />}
+          </main>
+
+          <GoalEntryForm onSubmit={handleCreateGoal} />
+
+          <footer className="py-2 text-center font-quicksand text-xs text-clay-light sm:text-sm">
+            Everything is flexible. You can always change your mind, reschedule, or eat snacks instead. 🍪
+          </footer>
+        </div>
+      </>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 p-6">
-      <div className="flex flex-col gap-3 border-b border-foreground/10 pb-6">
-        <ChatTranscript messages={messages} />
-        <ChatComposer onSend={handleRefine} />
+    <>
+      <AppHeader connections={connections} />
+      <div className="w-full max-w-5xl mx-auto flex flex-col gap-8 px-4 sm:px-6 pb-16">
+        <div className="flex flex-col gap-3">
+          <ChatTranscript messages={messages} />
+          <ChatComposer onSend={handleRefine} />
+        </div>
+        <CalendarShell
+          goal={goal}
+          plan={plan}
+          busyBlocks={busyBlocks}
+          connections={connections}
+          onNewGoal={handleNewGoal}
+          onPush={handlePush}
+        />
       </div>
-      <CalendarShell
-        goal={goal}
-        plan={plan}
-        busyBlocks={busyBlocks}
-        connections={connections}
-        onNewGoal={handleNewGoal}
-        onPush={handlePush}
-      />
-    </div>
+    </>
   );
 }

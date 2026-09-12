@@ -8,10 +8,10 @@ export function ChatTranscript({ messages }: { messages: ChatMessage[] }) {
       {messages.map((message) => (
         <div
           key={message.id}
-          className={`max-w-2xl whitespace-pre-wrap rounded-lg px-3 py-2 text-sm ${
+          className={`max-w-2xl whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-sm ${
             message.role === "user"
-              ? "self-end bg-foreground text-background"
-              : "self-start bg-foreground/5 text-foreground"
+              ? "self-end bg-coral text-white shadow-[0_4px_16px_rgba(249,124,86,0.25)]"
+              : "self-start border border-[#EDE2D4] bg-surface-low text-foreground"
           }`}
         >
           {message.content}
