@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "AI Planner",
-  description: "Turn a high-level goal into a scheduled plan on your calendar.",
+  title: "WhimsyCal",
+  description: "Turning whims into plans.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

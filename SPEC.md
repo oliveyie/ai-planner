@@ -1,4 +1,4 @@
-# AI Planner — Spec v0.1
+# WhimsyCal — Spec v0.1
 
 ## 1. Pitch
 
@@ -8,7 +8,7 @@ Give the app a high-level goal — a race ("run the Seattle Marathon"), a projec
 
 ## 2. Example flow
 
-1. User connects their Google Calendar (read access) first, before entering any goal. The app fetches busy blocks and shows the user's existing commitments on the calendar view, so they can see what they already have lined up.
+1. User connects a calendar — Google or Microsoft/Outlook (read access) — first, before entering any goal. The app fetches busy blocks and shows the user's existing commitments on the calendar view, so they can see what they already have lined up. Both providers can be connected at once; busy blocks from each are merged.
 2. User enters a goal: *"Run the Seattle Marathon"*, optionally with a target date (race day) and/or a start date. Both are optional: if no start date is given, it defaults to today; if no target date is given, the LLM estimates a reasonable one from context clues (goal type, typical timelines for that kind of goal) as part of generation, and surfaces that assumption to the user (e.g. *"Assuming a 16-week build to a race day around Jan 10 — let me know if your race date is different"*).
 3. App calls an LLM to generate a structured plan for that goal — in this example, marathon training phases (base, build, peak, taper), weeks, and tasks (long run, easy run, rest, cross-train, race day) with target days and durations; a different goal would produce entirely different phase/task vocabulary (see §1).
 4. A deterministic scheduling pass places each task into an actual free slot on the calendar, honoring day-of-week preferences (e.g. long runs stay on weekends) and flagging anything it can't fit.
@@ -16,7 +16,7 @@ Give the app a high-level goal — a race ("run the Seattle Marathon"), a projec
 6. Alongside the draft, the app posts an assistant chat message summarizing the plan and any assumptions it had to make, phrased as invitations rather than caveats — e.g. *"Assumed a beginner starting point since no current mileage was given — tell me your current weekly mileage and I can tailor the early weeks."* The user can act on it or ignore it.
 7. User types a refinement in a chat box: *"I want to run it under 4 hours"*, *"only do long runs on Sundays, I have kids' soccer on Saturdays"*, or a reply to the app's own invitation from step 6.
 8. App re-generates the plan honoring all prior + new constraints, reschedules around the same busy blocks, diffs it against the current draft, and updates the calendar — highlighting what changed. Still a draft.
-9. Once satisfied, the user explicitly pushes the draft to their real Google Calendar as its own dedicated calendar; later refinements re-sync (update/create/delete events) rather than duplicating. This also marks the goal `published` (see §4), freeing the user to start a new goal.
+9. Once satisfied, the user explicitly pushes the draft to their real calendar as its own dedicated calendar — Google or Outlook, whichever they connected (if both, they pick); later refinements re-sync (update/create/delete events) rather than duplicating. This also marks the goal `published` (see §4), freeing the user to start a new goal.
 
 ## 3. Decisions locked in for v1
 
@@ -25,22 +25,25 @@ These came out of the initial scoping pass:
 | Question | Decision |
 |---|---|
 | How is the plan generated? | **LLM-driven, structured output.** An LLM turns the goal + constraints into a JSON plan validated against a zod schema. No hand-authored domain algorithms in v1 — generality (any kind of goal, not just marathons) matters more than domain-expert-level correctness right now. |
-| How does the plan reach a calendar? | **In-app calendar view, plus live Google Calendar sync.** The app is the primary UI; Google Calendar is a push target so the plan shows up where the user actually lives day-to-day. |
-| Does the app know about existing commitments? | **Yes — it reads busy time from Google Calendar (v1) and schedules the generated plan around it.** Outlook and Apple/iCloud read support are explicitly deferred (see §8) — Outlook is a similar OAuth integration and a reasonable fast-follow; Apple/iCloud has no OAuth (CalDAV + app-specific password) and is a bigger, separate effort. |
+| How does the plan reach a calendar? | **In-app calendar view, plus live sync to Google Calendar and/or Microsoft/Outlook Calendar.** The app is the primary UI; the connected calendar(s) are a push target so the plan shows up where the user actually lives day-to-day. |
+| Does the app know about existing commitments? | **Yes — it reads busy time from Google and/or Microsoft/Outlook (v1, revised) and schedules the generated plan around it.** Both use OAuth with a similar consent-screen flow, so they're built together. Apple/iCloud read support stays deferred (see §8) — it has no OAuth (CalDAV + a manually-generated app-specific password instead), a meaningfully different and clunkier integration, not just more work. |
 | Where is data stored? | **Local-first, no app accounts.** Plans live in the browser (IndexedDB). No login, no server-side database. |
 | How does the user iterate? | **Conversational chat.** A chat box takes freeform natural-language adjustments and triggers regeneration — matches how people actually describe constraints ("no long runs on Saturdays"). |
-| When does the app write to the user's real calendar? | **Never automatically.** The in-app calendar is always a draft/preview, freely regenerated on every refinement. Writing to Google Calendar happens only when the user explicitly pushes/syncs (§2 step 8, §6). |
-| What's the first thing the user does? | **Connect their calendar, before entering a goal.** Seeing existing commitments up front (not just after a plan exists) is part of the pitch, and it's also what the scheduler needs as input. |
+| When does the app write to the user's real calendar? | **Never automatically.** The in-app calendar is always a draft/preview, freely regenerated on every refinement. Writing to Google or Microsoft Calendar happens only when the user explicitly pushes/syncs (§2 step 9, §6). |
+| What's the first thing the user does? | **Connect a calendar (Google and/or Microsoft/Outlook), before entering a goal.** Seeing existing commitments up front (not just after a plan exists) is part of the pitch, and it's also what the scheduler needs as input. |
+| Can a user connect more than one calendar provider? | **Yes, for reading.** Both a Google and a Microsoft connection can be active at once — busy blocks from each are merged into one list for scheduling (each `BusyBlock` keeps a `source` so they're distinguishable). For writing/pushing, the user picks which connected provider to push to (a button per connected provider) — the plan isn't pushed to both automatically. |
 | What if the user doesn't give a start/target date? | **Start date defaults to today (app-level default, not an LLM decision). Target date, if omitted, is estimated by the LLM from context clues** (goal type, typical timelines) during generation, recorded as an assumption, and surfaced to the user — correctable via chat like any other constraint. |
 | Does generation ever block on a clarifying question before producing a plan? | **No — always produce a best-effort first draft immediately**, matching the "show me a draft" framing of the original pitch. Any info that would meaningfully improve the plan (e.g. current weekly mileage) is instead phrased as part of `Plan.assumptions`, as an invitation rather than a blocker — e.g. *"Assumed a beginner starting point — tell me your current weekly mileage and I can tailor the early weeks."* This is posted as the assistant's first chat message alongside the draft (see §2, §5). |
 | How many goals/plans is v1 built for? | **One active goal/plan at a time.** Once it's published (pushed to the calendar), the user can start a new goal. Previously published goals stay around as read-only history, not concurrently editable. |
-| What counts as "busy" for scheduling? | **Only accepted, non-all-day events explicitly marked busy** block scheduling — this matches Google's own freebusy semantics directly, so no custom interpretation needed. Tentative/declined RSVPs and all-day events don't count as busy. |
+| What counts as "busy" for scheduling? | **Only accepted, non-all-day events explicitly marked busy** block scheduling — this matches both Google's freebusy semantics and Microsoft Graph's schedule status directly, so no custom interpretation needed on either provider. Tentative/declined RSVPs and all-day events don't count as busy. |
 | What happens when a task truly can't be scheduled? | **Leave it `schedulingStatus: 'conflict'`, visibly flagged/unscheduled on the calendar, and let the user resolve it via chat** — consistent with the conversational-iteration model rather than auto-resolving (e.g. auto-bumping to another week) on the user's behalf. |
 | How do we get consistent output regardless of what the user types as their goal? | **Two mechanisms, not per-input prompt formatting.** (1) One fixed system prompt template + JSON-schema/zod-enforced structured output handles arbitrary goal text uniformly — the goal is just interpolated as data into an unchanging template, never hand-rewritten. (2) A bounded self-critique/revise pass (see §5 step 3) catches *quality* problems (an unusual goal producing a nonsensical phase structure, unreasonable durations, etc.) that shape-validation alone wouldn't — the closest thing in this spec to "a lightweight agent." Cost: roughly 2x the LLM calls per generate/refine versus a single-call design, accepted for better consistency across very open-ended goals. |
 
-### Tension to resolve: "no accounts" + "Google Calendar read/write"
+### Tension to resolve: "no accounts" + "Google/Microsoft Calendar read/write"
 
-Google Calendar access requires OAuth, which normally implies server-side accounts. Resolution for v1: the Next.js server acts only as a stateless relay for the OAuth token exchange (Google requires a server-side client secret) — it never persists tokens or user records. The resulting Google access/refresh tokens are handed back to the browser and stored client-side (IndexedDB, alongside the plan). One connected Google account serves both directions: reading free/busy time for scheduling, and writing the generated plan as its own calendar. This keeps the "no accounts, no DB" property while enabling both. Trade-off: this only works from the browser/device that did the OAuth flow, and tokens sit in browser storage rather than behind server-side auth — acceptable for a single-user personal tool, called out explicitly as a v1 compromise.
+Both Google and Microsoft Calendar access require OAuth, which normally implies server-side accounts. Resolution for v1: the Next.js server acts only as a stateless relay for each provider's OAuth token exchange (each requires a server-side client secret) — it never persists tokens or user records. The resulting access/refresh tokens are handed back to the browser and stored client-side (IndexedDB, alongside the plan), one `CalendarConnection` record per connected provider. Each connection serves both directions for that provider: reading free/busy time for scheduling, and writing the generated plan as its own calendar. This keeps the "no accounts, no DB" property while enabling both, for either or both providers. Trade-off: this only works from the browser/device that did the OAuth flow, and tokens sit in browser storage rather than behind server-side auth — acceptable for a single-user personal tool, called out explicitly as a v1 compromise.
+
+This does mean **two separate one-time developer setups** are needed before this can be built and tested end-to-end: a Google Cloud OAuth Client ID/Secret (Google Cloud Console) and a Microsoft Entra ID (Azure AD) app registration with its own Client ID/Secret — different portals, different consent-screen mechanics, but the same shape of credential.
 
 ## 4. Data model
 
@@ -102,19 +105,21 @@ type Task = {
   scheduledEnd?: string
   schedulingStatus: 'scheduled' | 'conflict'  // 'conflict' = no free slot found near preferredDate honoring preferredDaysOfWeek
 
-  googleEventId?: string       // set once synced, used to update/delete on future syncs
+  syncedEventId?: string       // set once pushed to a calendar, used to update/delete on future pushes
+  syncedProvider?: 'google' | 'microsoft'  // which connection syncedEventId belongs to — a plan is only ever pushed to one provider at a time (§3), even if both are connected for reading
 }
 
 type CalendarConnection = {
-  provider: 'google'           // v1: Google only, for both reading busy time and writing the plan
+  provider: 'google' | 'microsoft'   // v1 (revised): both, for reading busy time and (one at a time) writing the plan. Apple/iCloud stays out — see §8.
   connectedAt: string
-  // OAuth tokens stored alongside this in IndexedDB, not on the server (see §3 tension note)
+  // OAuth tokens stored alongside this in IndexedDB, not on the server (see §3 tension note).
+  // One CalendarConnection record per connected provider — both can exist at once.
 }
 
 type BusyBlock = {
   start: string                 // ISO datetime
   end: string                   // ISO datetime
-  source: 'google'
+  source: 'google' | 'microsoft'
   // Deliberately opaque: no title, description, or event type is read or stored.
   // v1 only needs "is this time free or not" for scheduling — see §8 on why
   // reading event *content* for context is explicitly out of scope for now.
@@ -136,10 +141,10 @@ All of this — `Goal`, `Plan`, `ChatMessage[]` — is stored together per-goal 
 
 Generation is split into two passes with different jobs: the LLM decides **what** to do and roughly **when**; a deterministic scheduler decides the **actual time slot**, because slot-fitting against real busy blocks is exactly the kind of precise, checkable arithmetic LLMs are unreliable at.
 
-1. **Fetch availability**: `GET /api/calendar/freebusy` (requires an active `CalendarConnection`) — pulls busy blocks from Google's freebusy API across the full plan horizon (startDate → targetDate).
+1. **Fetch availability**: `GET /api/calendar/freebusy` (requires at least one active `CalendarConnection`) — pulls busy blocks across the full plan horizon (startDate → targetDate) from every connected provider (Google's freebusy API, Microsoft Graph's schedule/calendarView equivalent) and merges them into one `BusyBlock[]` list.
 2. **Generate (semantic)**: `POST /api/plan/generate` — input `{ goal }` (title, startDate defaulted to today if omitted, targetDate if the user gave one). Server builds a prompt instructing the LLM to return JSON matching the `Plan`/`Task` shape (via structured output / JSON schema) — including each task's `preferredDate`, `durationMinutes`, and any `preferredDaysOfWeek` implied by constraints — validated with zod, retried once on validation failure. If `targetDate` was omitted, the same call is responsible for estimating one from context clues (goal type, typical timeline for that kind of goal, any hints in the title/constraints) and recording it in `Plan.assumptions`; the client then backfills `Goal.targetDate` from the estimate so later refinements have a fixed target unless the user corrects it.
 3. **Critique & revise (bounded, one pass)**: a second LLM call reviews the draft semantic plan against the original goal and constraints — checking things schema validation can't, like whether the phase structure actually fits this specific goal, whether task durations/cadence are sensible, and whether every stated constraint was actually honored. It returns either an approval or a revised plan (same structured-output + zod validation as step 2). This runs at most once per generate/refine call — no open-ended self-correction loop — so worst case is 2 LLM calls, not an unbounded agent loop. This is the piece that answers "how do we get consistent results regardless of what the user typed," since a single pass has no check on its own output.
-4. **Schedule (deterministic)**: for each `Task` in the (possibly revised) plan, find the earliest free slot of at least `durationMinutes` on `preferredDate` (or the nearest date allowed by `preferredDaysOfWeek`, searching outward within the same week) that doesn't overlap a `BusyBlock` — where "busy" means an accepted, non-all-day event explicitly marked busy (Google's own freebusy semantics; tentative/declined RSVPs and all-day events don't block). Sets `scheduledStart`/`scheduledEnd` and `schedulingStatus`. Tasks that stay `schedulingStatus: 'conflict'` after this search are left unscheduled and visibly flagged on the calendar rather than auto-bumped elsewhere or overlapped — resolving them is left to the user via chat, same as any other refinement.
+4. **Schedule (deterministic)**: for each `Task` in the (possibly revised) plan, find the earliest free slot of at least `durationMinutes` on `preferredDate` (or the nearest date allowed by `preferredDaysOfWeek`, searching outward within the same week) that doesn't overlap a `BusyBlock` from any connected provider — where "busy" means an accepted, non-all-day event explicitly marked busy (Google's freebusy semantics and Microsoft Graph's schedule status are treated the same way here; tentative/declined RSVPs and all-day events don't block, on either provider). Sets `scheduledStart`/`scheduledEnd` and `schedulingStatus`. Tasks that stay `schedulingStatus: 'conflict'` after this search are left unscheduled and visibly flagged on the calendar rather than auto-bumped elsewhere or overlapped — resolving them is left to the user via chat, same as any other refinement.
 5. **Post the draft + invite feedback**: as soon as scheduling finishes, the client renders the draft calendar (never blocking on a round-trip question first) and appends an assistant `ChatMessage` built from `Plan.summary` and `Plan.assumptions` — each assumption phrased as an invitation to correct it (e.g. *"Assumed a beginner starting point since no current mileage was given — tell me your current weekly mileage and I can tailor the early weeks"*) rather than a blocking question. The user can reply to it like any other refinement, or ignore it and just look at the draft.
 6. **Refinement**: `POST /api/plan/refine` — input `{ goal, currentPlan, newConstraint }`. The full current plan and the new natural-language constraint go back to the LLM with instructions to produce an updated semantic plan that satisfies *all* constraints (old + new) while changing as little as possible elsewhere. Result goes through the same critique & revise pass (step 3), is re-run through the scheduling pass against the same busy blocks, saved as a new `Plan` version, and diffed client-side (by task id/date) so the UI can highlight added/removed/moved tasks.
 7. Regeneration is **full-plan**, not incremental patching — simpler to implement and reason about, and the LLM has full context each time. Revisit only if response latency or plan instability becomes a problem.
@@ -147,29 +152,30 @@ Generation is split into two passes with different jobs: the LLM decides **what*
 
 ## 6. Calendar
 
-Two independent directions, both against the one connected Google account for v1:
+Two independent directions, against each connected provider (Google and/or Microsoft) for v1:
 
-- **Read (availability)**: on connect, and before every generate/refine, the app fetches `BusyBlock[]` for the plan horizon via Google's freebusy API. This never modifies the user's calendar — it's read-only input to the scheduler in §5, and deliberately limited to *time*, not event content (see `BusyBlock` in §4 and the non-goal below). Existing busy times are also shown (read-only, greyed out, untitled) alongside the plan in the in-app calendar view for context, so the user can see *why* a task landed where it did.
-- **Write (push the plan)** (`POST /api/calendar/sync`): one-way, app → Google, v1 only, and **only ever triggered by an explicit user action** (e.g. a "Push to Google Calendar" button) — never automatically on generate or refine.
-  - First push creates a dedicated calendar named after the goal (e.g. "Seattle Marathon Plan", "AI Project Plan") so it doesn't clutter the user's primary calendar — and so the read side can trivially exclude the app's own events from being treated as "busy" on the next freebusy fetch.
-  - Each `Task` maps to one event at `scheduledStart`/`scheduledEnd`; `Task.googleEventId` is stored after creation so future pushes update or delete the same event instead of duplicating.
-  - If the user edits an event directly in Google Calendar, the app does not detect or reconcile that drift in v1 — the app's local plan is always the source of truth on push.
-- **In-app view (the draft)**: week and month grid rendered from `Task[]` (flattened across all phases/weeks), using `scheduledStart`/`scheduledEnd` once scheduled, overlaid with the read-only `BusyBlock[]` from the connected calendar. This is the working draft — every generation and refinement updates it instantly and locally; it only becomes "real" once explicitly pushed. Clicking a task shows its description; a list/agenda view complements the grid.
+- **Read (availability)**: on connect, and before every generate/refine, the app fetches `BusyBlock[]` for the plan horizon from every connected provider (Google's freebusy API, Microsoft Graph's equivalent) and merges them. This never modifies the user's calendar — it's read-only input to the scheduler in §5, and deliberately limited to *time*, not event content (see `BusyBlock` in §4 and the non-goal below). Existing busy times are also shown (read-only, greyed out, untitled) alongside the plan in the in-app calendar view for context, so the user can see *why* a task landed where it did.
+- **Write (push the plan)** (`POST /api/calendar/sync`): one-way, app → one chosen connected provider, v1 only, and **only ever triggered by an explicit user action** (e.g. a "Push to Google Calendar" / "Push to Outlook Calendar" button, one per connected provider) — never automatically on generate or refine. If only one provider is connected, only that button appears; if both are, the user picks.
+  - First push to a given provider creates a dedicated calendar named after the goal (e.g. "Seattle Marathon Plan", "AI Project Plan") so it doesn't clutter the user's primary calendar — and so the read side can trivially exclude the app's own events from being treated as "busy" on the next freebusy fetch.
+  - Each `Task` maps to one event at `scheduledStart`/`scheduledEnd`; `Task.syncedEventId` + `syncedProvider` are stored after creation so future pushes update or delete the same event instead of duplicating.
+  - If the user edits an event directly in Google or Outlook Calendar, the app does not detect or reconcile that drift in v1 — the app's local plan is always the source of truth on push.
+- **In-app view (the draft)**: week and month grid rendered from `Task[]` (flattened across all phases/weeks), using `scheduledStart`/`scheduledEnd` once scheduled, overlaid with the read-only `BusyBlock[]` merged from all connected calendars. This is the working draft — every generation and refinement updates it instantly and locally; it only becomes "real" once explicitly pushed. Clicking a task shows its description; a list/agenda view complements the grid.
 
 ## 7. Tech stack
 
 - Next.js 16 (App Router, already scaffolded), React 19, TypeScript, Tailwind 4 — already in place.
 - `zod` for validating LLM output against the `Plan` schema — already a dependency.
 - `openai` SDK for generation — already a dependency.
-- IndexedDB (likely via a small wrapper like `idb`) for local persistence.
-- `googleapis` (or direct REST calls) for Calendar API + OAuth token exchange.
+- IndexedDB (via `idb`) for local persistence — already in place.
+- Direct REST calls (no heavy SDK) for both providers' OAuth token exchange + Calendar API: Google's `/calendar/v3` + freebusy endpoint, Microsoft Graph's `/me/calendar` + schedule endpoint. Keeping both as plain REST keeps the two providers symmetric in the codebase rather than mixing an SDK-based Google client with a hand-rolled Microsoft one.
 - Calendar UI: build a minimal week/month grid first; consider a library (e.g. FullCalendar) only if the hand-rolled version becomes a bottleneck.
 
 ## 8. Non-goals for v1
 
 - Multi-user accounts, server-side database, sharing plans between people.
-- Reading Outlook or Apple/iCloud calendars for availability (Outlook is a plausible fast-follow — same OAuth shape as Google; Apple/iCloud needs CalDAV + app-specific password, a separate and bigger effort).
-- Two-way calendar sync / conflict detection (drift in Google Calendar after sync is not reconciled).
+- Reading or writing Apple/iCloud calendars — it has no OAuth (CalDAV + a manually-generated app-specific password instead), a genuinely different and clunkier integration than Google/Microsoft, not just more of the same work. Revisit only if there's real demand for it.
+- Pushing a plan to more than one connected provider at once (the user picks one destination per push, even if both Google and Microsoft are connected for reading).
+- Two-way calendar sync / conflict detection (drift in the pushed calendar after sync is not reconciled, on either provider).
 - Domain-expert-validated methodologies for any specific goal type (the plan is only as good as the LLM's output; no hard-coded sports-science, project-management, or curriculum rules).
 - Mobile app / notifications / reminders.
 - Editing tasks by dragging on the calendar (may be a fast follow).
@@ -183,8 +189,8 @@ None currently — the four open questions from the previous iteration (clarify-
 ## 10. Suggested build order
 
 1. Data model + IndexedDB persistence + static calendar UI shell (seed with a hand-written example plan, no LLM yet). **Done.**
-2. Google OAuth connect flow + freebusy fetch, rendering existing busy blocks on the calendar shell as its own standalone step — this should work and look complete before a goal ever exists (still no LLM). **Deferred** — needs a Google Cloud OAuth Client ID/Secret that didn't exist yet when step 3 was ready to start. Reordered after step 3/4 rather than blocking on it: the scheduler (§5 step 4) takes `BusyBlock[]` as a plain input, and an empty array (no calendar connected) is a valid value — everything just schedules at its preferred time with nothing to avoid. Revisit once Google credentials exist.
-3. Goal entry + wire up `generatePlan()` — this is where the generate-then-critique-and-revise pair (§5 steps 2-3) gets built and tested — + the deterministic scheduling pass against fetched busy blocks (an empty list, per the note above, until step 2 is done) → rendered **draft** calendar with real scheduled times. Worth testing against goals from a few different domains here (marathon, a project, a skill) specifically because that's what the critique pass exists to keep consistent.
-4. Chat panel + `refinePlan()` — reuses the same generate-then-critique pair from step 3 — constraint history, regeneration, re-scheduling, diff highlighting. Still all draft, all local.
-5. Explicit "push to Google Calendar" action, one-way, to a dedicated calendar. Also needs Google OAuth (step 2), so also blocked until then.
+2. Google **and** Microsoft/Outlook OAuth connect flows + freebusy fetch (merged into one `BusyBlock[]`), rendering existing busy blocks on the calendar shell as its own standalone step — this should work and look complete before a goal ever exists (still no LLM). **Deferred** — needs a Google Cloud OAuth Client ID/Secret *and* a Microsoft Entra ID app registration, neither of which existed yet when step 3 was ready to start. Reordered after step 3/4 rather than blocking on it: the scheduler (§5 step 4) takes `BusyBlock[]` as a plain input, and an empty array (no calendar connected) is a valid value — everything just schedules at its preferred time with nothing to avoid. Revisit once both providers' credentials exist. (Originally scoped as Google-only; widened to include Microsoft after a mid-build product discussion — see conversation.)
+3. Goal entry + wire up `generatePlan()` — this is where the generate-then-critique-and-revise pair (§5 steps 2-3) gets built and tested — + the deterministic scheduling pass against fetched busy blocks (an empty list, per the note above, until step 2 is done) → rendered **draft** calendar with real scheduled times. Worth testing against goals from a few different domains here (marathon, a project, a skill) specifically because that's what the critique pass exists to keep consistent. **Done.**
+4. Chat panel + `refinePlan()` — reuses the same generate-then-critique pair from step 3 — constraint history, regeneration, re-scheduling. **Done** (diff highlighting explicitly deferred — the calendar re-renders the new plan version without a visual diff for now).
+5. Explicit "push to Google/Outlook Calendar" action (one button per connected provider), one-way, to a dedicated calendar. Also needs step 2, so also blocked until then.
 6. Polish: multiple goals, task completion tracking, editing, conflict-resolution UX.
