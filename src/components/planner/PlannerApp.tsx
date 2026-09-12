@@ -253,12 +253,12 @@ export function PlannerApp() {
             <p className="text-center text-sm text-peach-dark">Calendar connection failed: {connectError}</p>
           )}
 
+          <GoalEntryForm onSubmit={handleCreateGoal} />
+
           <main className="relative overflow-hidden rounded-[2.5rem] border border-[#f0e8dc] bg-surface-card/95 p-6 shadow-[0_8px_32px_-4px_rgba(184,150,120,0.08),0_2px_8px_-1px_rgba(184,150,120,0.04)] sm:p-8">
             <EmptyCalendarPreview dimmed={showConnectModal} />
             {showConnectModal && <ConnectCalendarScreen onSkip={handleSkipConnect} />}
           </main>
-
-          <GoalEntryForm onSubmit={handleCreateGoal} />
 
           <footer className="py-2 text-center font-quicksand text-xs text-clay-light sm:text-sm">
             Everything is flexible. You can always change your mind, reschedule, or eat snacks instead. 🍪
