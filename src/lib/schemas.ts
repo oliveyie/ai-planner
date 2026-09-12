@@ -53,17 +53,19 @@ export const planSchema = z.object({
   generatedAt: z.string(),
 });
 
+export const calendarProviderSchema = z.enum(["google", "microsoft"]);
+
 export const goalSchema = z.object({
   id: z.string(),
   title: z.string(),
   targetDate: z.string().optional(),
   startDate: z.string(),
   constraints: z.array(z.string()),
-  status: z.enum(["active", "published"]),
+  status: z.enum(["active", "published", "archived"]),
   createdAt: z.string(),
+  externalCalendarIds: z.record(calendarProviderSchema, z.string()).optional(),
+  syncedEventIds: z.record(calendarProviderSchema, z.array(z.string())).optional(),
 });
-
-export const calendarProviderSchema = z.enum(["google", "microsoft"]);
 
 export const calendarConnectionSchema = z.object({
   provider: calendarProviderSchema,
@@ -77,6 +79,7 @@ export const busyBlockSchema = z.object({
   start: z.string(),
   end: z.string(),
   source: calendarProviderSchema,
+  title: z.string().optional(),
 });
 
 export const chatMessageSchema = z.object({

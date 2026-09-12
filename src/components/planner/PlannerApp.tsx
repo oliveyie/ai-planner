@@ -6,7 +6,7 @@ import { ConnectCalendarScreen } from "@/src/components/calendar/ConnectCalendar
 import { ChatComposer } from "@/src/components/chat/ChatComposer";
 import { ChatTranscript } from "@/src/components/chat/ChatTranscript";
 import { GoalEntryForm } from "@/src/components/goal/GoalEntryForm";
-import { fetchFreeBusy } from "@/src/lib/calendar-api";
+import { fetchCalendarEvents, pushPlanToCalendar } from "@/src/lib/calendar-api";
 import { addDays, parseISODate } from "@/src/lib/date-utils";
 import {
   getActiveGoal,
@@ -108,7 +108,7 @@ export function PlannerApp() {
     // Target date isn't known yet at this point, so fetch a generous default
     // horizon rather than a precise one — refine calls (below) can narrow it
     // once a target date exists.
-    const freshBusyBlocks = await fetchFreeBusy(new Date(), addDays(new Date(), DEFAULT_HORIZON_DAYS));
+    const freshBusyBlocks = await fetchCalendarEvents(new Date(), addDays(new Date(), DEFAULT_HORIZON_DAYS));
 
     const response = await fetch("/api/plan/generate", {
       method: "POST",
@@ -168,7 +168,7 @@ export function PlannerApp() {
     const horizonEnd = goal.targetDate
       ? parseISODate(goal.targetDate)
       : addDays(horizonStart, DEFAULT_HORIZON_DAYS);
-    const freshBusyBlocks = await fetchFreeBusy(horizonStart, horizonEnd);
+    const freshBusyBlocks = await fetchCalendarEvents(horizonStart, horizonEnd);
 
     const response = await fetch("/api/plan/refine", {
       method: "POST",
@@ -203,6 +203,31 @@ export function PlannerApp() {
     setMessages((prev) => [...prev, assistantMessage]);
   }
 
+  async function handleNewGoal() {
+    if (!goal) return;
+    if (!window.confirm("Start a new goal? This one will be archived, not deleted.")) return;
+
+    if (goal.status === "active") {
+      await saveGoal({ ...goal, status: "archived" });
+    }
+
+    setGoal(null);
+    setPlan(null);
+    setMessages([]);
+    setBusyBlocks([]);
+  }
+
+  async function handlePush(provider: CalendarProvider) {
+    if (!goal || !plan) return;
+
+    const { goal: updatedGoal, plan: updatedPlan } = await pushPlanToCalendar(provider, goal, plan);
+    await saveGoal(updatedGoal);
+    await savePlan(updatedPlan);
+
+    setGoal(updatedGoal);
+    setPlan(updatedPlan);
+  }
+
   if (loading) {
     return <div className="p-8 text-sm text-foreground/60">Loading…</div>;
   }
@@ -234,7 +259,14 @@ export function PlannerApp() {
         <ChatTranscript messages={messages} />
         <ChatComposer onSend={handleRefine} />
       </div>
-      <CalendarShell goal={goal} plan={plan} busyBlocks={busyBlocks} />
+      <CalendarShell
+        goal={goal}
+        plan={plan}
+        busyBlocks={busyBlocks}
+        connections={connections}
+        onNewGoal={handleNewGoal}
+        onPush={handlePush}
+      />
     </div>
   );
 }

@@ -35,7 +35,10 @@ export function getProviderConfig(provider: CalendarProvider): ProviderConfig {
     return {
       authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
       tokenUrl: "https://oauth2.googleapis.com/token",
-      scope: "https://www.googleapis.com/auth/calendar.readonly",
+      // Full access, not calendar.readonly: pushing a plan creates a
+      // dedicated calendar, which read-only access can't do. Anyone who
+      // connected before this widened needs to reconnect (SPEC.md §7).
+      scope: "https://www.googleapis.com/auth/calendar",
       clientId: requireEnv("GOOGLE_CLIENT_ID"),
       clientSecret: requireEnv("GOOGLE_CLIENT_SECRET"),
       // Google only returns a refresh_token on first consent unless forced.

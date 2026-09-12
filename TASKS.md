@@ -139,3 +139,34 @@ Connecting Google and/or Microsoft actually redirects to that provider's real si
 - Verified in a real browser: fresh load shows the connect screen; `?calendar_error=...` shows the banner and gets stripped from the URL; "Skip for now" moves to goal entry and persists across a reload.
 - **The functional core** — does the scheduler actually avoid busy time? — verified by POSTing directly to `/api/plan/generate` with a fabricated 14-day `busyBlocks` list (6am–12pm blocked every day), bypassing OAuth entirely since this is the same code path a real connection feeds into. Every task that landed within the 14-day covered window was scheduled at exactly 12:00 — the first free slot after the blocked window — confirming the busy-blocks plumbing (client → API → `generatePlan` → `scheduleTasks`) works correctly end to end.
 - **Not yet verified**: the actual OAuth consent screen + callback completing with a real account, and `BusyBlockChip` rendering with real (not fabricated) data — both need the user to actually click "Connect Google Calendar" / "Connect Outlook Calendar" and log in themselves.
+
+# Task breakdown — New Goal button, real event content, push to calendar
+
+Three features requested together, pulled forward from step 5/6 of SPEC.md §10 now that both providers' credentials exist and the user has real accounts to test with.
+
+**Google OAuth scope widened**: from `calendar.readonly` to full `https://www.googleapis.com/auth/calendar` — required for push (creating a dedicated calendar isn't possible with read-only access). **Anyone who connected Google before this change needs to disconnect and reconnect** to get a token with write permission; the old token simply won't have it. Microsoft's `Calendars.ReadWrite` already covered both directions from step 2, no change needed there.
+
+## New Goal button
+
+- [x] `Goal.status` gained a third value, `'archived'` (types.ts, schemas.ts, SPEC.md §4) — distinct from `'published'` so history stays honest about whether a goal was actually pushed anywhere.
+- [x] `PlannerApp.handleNewGoal()` — confirms via `window.confirm`, archives the goal only if it was still `'active'` (a published goal keeps that status, correctly), clears local state (goal/plan/messages/busyBlocks) so `GoalEntryForm` reappears. Nothing is deleted — old goals/plans/messages stay in IndexedDB as history (not yet browsable — that's still a step 6 item).
+- [x] "+ New Goal" link in `CalendarShell`'s header.
+
+## Real event content (revised from opaque busy-blocks-only)
+
+- [x] `BusyBlock` gained an optional `title` field (types.ts, schemas.ts, SPEC.md §4). This is a deliberate scope widening from the original privacy-conservative design (§8) — confirmed explicitly with the user before building it.
+- [x] `calendar-api.ts`: replaced the freebusy-only fetch with a real events fetch — Google's `events.list` (filtering out cancelled/`transparent`/all-day), Microsoft's `calendarView` (now also selecting `subject`) — renamed `fetchFreeBusy` → `fetchCalendarEvents` throughout to match what it actually does now.
+- [x] `BusyBlockChip` shows the title when present, falling back to just the time range if a provider ever returns an event with no title.
+
+## Push to Google/Outlook Calendar
+
+- [x] `Goal` gained `externalCalendarIds` (per-provider dedicated-calendar id, created once and reused) and `syncedEventIds` (per-provider list of event ids from the *last* push to that provider).
+- [x] `calendar-api.ts`: `pushPlanToCalendar(provider, goal, plan)` — creates the dedicated calendar on first push (reuses it after), creates or updates one event per scheduled task (update when `task.syncedEventId` already matches this provider, i.e. a second push of the *same* plan version), then deletes any event id that was in the *previous* push's set but isn't in the new one (handles a refine removing/changing tasks — see the `Task.syncedEventId` comment in SPEC.md §4 for why this specific staleness check has to live at the goal level rather than per-task: regenerated tasks are new objects with new ids, so a task-level id can't be compared across plan versions).
+- [x] `PushControls` component — one button per connected provider, loading/success/error state per click.
+- [x] `PlannerApp.handlePush(provider)` wires it together and persists the result (goal now carries the calendar/event ids, tasks now carry `syncedEventId`/`syncedProvider`, goal status flips to `'published'` if it was still `'active'`).
+
+## Definition of done
+
+New Goal: clicking it archives the current goal (not deletes it) and returns to a blank goal-entry screen; a fresh goal can then be entered normally. Real events: after connecting, existing calendar events show their actual titles instead of anonymous grey blocks. Push: clicking "Push to Google/Outlook Calendar" creates a dedicated calendar and one event per scheduled task on the first push, and updates/cleans up correctly (no duplicates, no orphaned stale events) on subsequent pushes after a refine changes the plan.
+
+**Status**: New Goal fully built and verified in a real browser (generated a plan, clicked New Goal, confirmed the old goal was archived — not deleted, 1 plan still in storage — then entered and generated a second goal successfully). The widened Google scope was confirmed via the real `/api/auth/google/start` redirect. **Real event content and push could not be verified against real data** — both need an actual Google/Outlook login with calendar events already on it, which only the user can provide; ready for the user to test once they reconnect Google (required for the new scope) and try both a fresh push and a push-after-refine (to exercise the stale-event cleanup specifically).

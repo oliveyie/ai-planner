@@ -9,9 +9,10 @@ import {
   parseISODate,
 } from "@/src/lib/date-utils";
 import { flattenTasks, groupBusyBlocksByDate, groupTasksByDate } from "@/src/lib/plan-utils";
-import type { BusyBlock, Goal, Plan } from "@/src/lib/types";
+import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, Plan } from "@/src/lib/types";
 import { AgendaList } from "./AgendaList";
 import { MonthView } from "./MonthView";
+import { PushControls } from "./PushControls";
 import { WeekView } from "./WeekView";
 
 type ViewMode = "week" | "month" | "agenda";
@@ -22,10 +23,16 @@ export function CalendarShell({
   goal,
   plan,
   busyBlocks = [],
+  connections = [],
+  onNewGoal,
+  onPush,
 }: {
   goal: Goal;
   plan: Plan;
   busyBlocks?: BusyBlock[];
+  connections?: CalendarConnection[];
+  onNewGoal?: () => void;
+  onPush?: (provider: CalendarProvider) => Promise<void>;
 }) {
   const [view, setView] = useState<ViewMode>("month");
   const [anchorDate, setAnchorDate] = useState<Date>(() => parseISODate(goal.startDate));
@@ -48,9 +55,16 @@ export function CalendarShell({
 
   return (
     <div className="flex flex-col gap-4">
-      <header>
+      <header className="flex flex-wrap items-start justify-between gap-3">
         <h1 className="text-xl font-semibold">{goal.title}</h1>
+        {onNewGoal && (
+          <button onClick={onNewGoal} className="text-sm text-foreground/60 underline underline-offset-2">
+            + New Goal
+          </button>
+        )}
       </header>
+
+      {onPush && <PushControls connections={connections} onPush={onPush} />}
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-2">

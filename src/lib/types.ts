@@ -6,8 +6,16 @@ export type Goal = {
   targetDate?: string; // ISO date
   startDate: string; // ISO date
   constraints: string[];
-  status: "active" | "published";
+  status: "active" | "published" | "archived";
   createdAt: string;
+
+  // Set the first time a plan is pushed to a given provider; reused on every
+  // later push so a goal always has at most one dedicated calendar per provider.
+  externalCalendarIds?: Partial<Record<"google" | "microsoft", string>>;
+  // Every event id currently live on each provider for this goal, from the
+  // most recent push — compared against the new set on each push so events
+  // for tasks that no longer exist (e.g. after a refine) get deleted.
+  syncedEventIds?: Partial<Record<"google" | "microsoft", string[]>>;
 };
 
 export type Plan = {
@@ -73,6 +81,7 @@ export type BusyBlock = {
   start: string; // ISO datetime
   end: string; // ISO datetime
   source: CalendarProvider;
+  title?: string; // the real event title, read from the connected calendar
 };
 
 export type ChatMessage = {

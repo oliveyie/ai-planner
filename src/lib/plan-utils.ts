@@ -27,6 +27,23 @@ export function flattenTasks(plan: Plan): Task[] {
   return plan.phases.flatMap((phase) => phase.weeks.flatMap((week) => week.tasks));
 }
 
+// Immutably rebuilds a Plan with some tasks replaced (matched by id) — used
+// wherever a task needs new fields written back into the nested phase/week
+// structure (e.g. push-to-calendar setting syncedEventId) without touching
+// tasks that weren't updated.
+export function mapPlanTasks(plan: Plan, updates: Map<string, Task>): Plan {
+  return {
+    ...plan,
+    phases: plan.phases.map((phase) => ({
+      ...phase,
+      weeks: phase.weeks.map((week) => ({
+        ...week,
+        tasks: week.tasks.map((task) => updates.get(task.id) ?? task),
+      })),
+    })),
+  };
+}
+
 export function taskDateKey(task: Task): string {
   if (task.scheduledStart) {
     return toISODate(parseISODateTime(task.scheduledStart));
