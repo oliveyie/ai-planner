@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { fetchCalendarEvents } from "@/src/lib/calendar-api";
 import {
   addDays,
   addMonths,
@@ -11,17 +12,39 @@ import {
   startOfWeek,
   toISODate,
 } from "@/src/lib/date-utils";
+import { groupBusyBlocksByDate } from "@/src/lib/plan-utils";
+import type { BusyBlock, CalendarConnection } from "@/src/lib/types";
+import { BusyBlockChip } from "./BusyBlockChip";
+import { CalendarLegend } from "./CalendarLegend";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; // matches this app's Sunday-start week
 
 type ViewMode = "month" | "week" | "day";
 const VIEW_MODES: ViewMode[] = ["month", "week", "day"];
 
-function DayCell({ day, today, inMonth = true }: { day: Date; today: Date; inMonth?: boolean }) {
+function startOfDay(date: Date): Date {
+  const result = new Date(date);
+  result.setHours(0, 0, 0, 0);
+  return result;
+}
+
+function DayCell({
+  day,
+  today,
+  inMonth = true,
+  events = [],
+  compactEvents = false,
+}: {
+  day: Date;
+  today: Date;
+  inMonth?: boolean;
+  events?: BusyBlock[];
+  compactEvents?: boolean;
+}) {
   const isToday = isSameDay(day, today);
   return (
     <div
-      className={`min-h-[82px] rounded-2xl border-[1.5px] border-dashed p-2 transition-all ${
+      className={`flex min-h-[82px] flex-col gap-1 rounded-2xl border-[1.5px] border-dashed p-2 transition-all ${
         isToday
           ? "border-amber-300 bg-amber-50/20"
           : inMonth
@@ -32,13 +55,23 @@ function DayCell({ day, today, inMonth = true }: { day: Date; today: Date; inMon
       <span className={`text-xs font-semibold ${isToday ? "text-amber-500" : "text-slate-400"}`}>
         {day.getDate()}
       </span>
+      {events.map((event, i) => (
+        <BusyBlockChip key={i} block={event} compact={compactEvents} />
+      ))}
     </div>
   );
 }
 
-export function EmptyCalendarPreview({ dimmed = false }: { dimmed?: boolean }) {
+export function EmptyCalendarPreview({
+  dimmed = false,
+  connections = [],
+}: {
+  dimmed?: boolean;
+  connections?: CalendarConnection[];
+}) {
   const [view, setView] = useState<ViewMode>("week");
   const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
+  const [busyBlocks, setBusyBlocks] = useState<BusyBlock[]>([]);
   const today = new Date();
 
   const monthStart = startOfMonth(anchorDate);
@@ -51,12 +84,38 @@ export function EmptyCalendarPreview({ dimmed = false }: { dimmed?: boolean }) {
   const weekStart = startOfWeek(anchorDate);
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
+  const dayStart = startOfDay(anchorDate);
+
   const label =
     view === "month"
       ? formatMonthLabel(anchorDate)
       : view === "week"
         ? formatWeekRangeLabel(anchorDate)
         : anchorDate.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+
+  useEffect(() => {
+    if (connections.length === 0) return;
+
+    const rangeStart = view === "month" ? monthGridStart : view === "week" ? weekStart : dayStart;
+    const rangeEnd =
+      view === "month" ? addDays(monthGridEnd, 1) : view === "week" ? addDays(weekStart, 7) : addDays(dayStart, 1);
+
+    let cancelled = false;
+    fetchCalendarEvents(rangeStart, rangeEnd).then((blocks) => {
+      if (!cancelled) setBusyBlocks(blocks);
+    });
+    return () => {
+      cancelled = true;
+    };
+    // Range bounds are all derived from view + anchorDate, already covered below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connections.length, view, anchorDate.getTime()]);
+
+  // Derived rather than reset via setState in the effect above: guards
+  // against ever rendering stale events if a connection is ever removed.
+  const effectiveBusyBlocks = connections.length > 0 ? busyBlocks : [];
+  const busyBlocksByDate = groupBusyBlocksByDate(effectiveBusyBlocks);
+  const dayEvents = busyBlocksByDate.get(toISODate(anchorDate)) ?? [];
 
   function shift(direction: 1 | -1) {
     setAnchorDate((current) => {
@@ -114,10 +173,22 @@ export function EmptyCalendarPreview({ dimmed = false }: { dimmed?: boolean }) {
         </div>
       </div>
 
+      <div className="mb-4">
+        <CalendarLegend busyBlocks={effectiveBusyBlocks} />
+      </div>
+
       {view === "day" ? (
-        <div className="flex min-h-[280px] items-center justify-center rounded-2xl border-[1.5px] border-dashed border-amber-300 bg-amber-50/20 p-6">
-          <span className="font-quicksand text-sm font-semibold text-amber-500">Nothing scheduled yet</span>
-        </div>
+        dayEvents.length > 0 ? (
+          <div className="flex min-h-[280px] flex-col gap-2 rounded-2xl border-[1.5px] border-dashed border-amber-300 bg-amber-50/20 p-4">
+            {dayEvents.map((event, i) => (
+              <BusyBlockChip key={i} block={event} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex min-h-[280px] items-center justify-center rounded-2xl border-[1.5px] border-dashed border-amber-300 bg-amber-50/20 p-6">
+            <span className="font-quicksand text-sm font-semibold text-amber-500">Nothing scheduled yet</span>
+          </div>
+        )
       ) : (
         <>
           <div className="mb-2 grid grid-cols-7 gap-3 text-center font-quicksand text-xs font-bold uppercase tracking-wider text-slate-400">
@@ -132,6 +203,8 @@ export function EmptyCalendarPreview({ dimmed = false }: { dimmed?: boolean }) {
                 day={day}
                 today={today}
                 inMonth={view === "week" || day.getMonth() === anchorDate.getMonth()}
+                events={busyBlocksByDate.get(toISODate(day)) ?? []}
+                compactEvents={view === "month"}
               />
             ))}
           </div>

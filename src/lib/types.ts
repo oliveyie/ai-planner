@@ -82,6 +82,9 @@ export type BusyBlock = {
   end: string; // ISO datetime
   source: CalendarProvider;
   title?: string; // the real event title, read from the connected calendar
+  calendarId: string; // which specific calendar within the provider this came from (a provider can have several)
+  calendarName: string; // display name for the legend, e.g. "Work", "Personal"
+  color: string; // hex — the user's own color for that calendar where the provider exposes one, else a deterministic fallback
 };
 
 export type ChatMessage = {

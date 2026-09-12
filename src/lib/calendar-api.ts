@@ -43,8 +43,24 @@ function localTimeZone(): string {
   return Intl.DateTimeFormat().resolvedOptions().timeZone;
 }
 
+// Used whenever a provider doesn't give us a usable color for a calendar
+// (Microsoft's "auto", or a listing call that fails) — reuses this app's own
+// accent palette so fallback colors still feel native to WhimsyCal.
+const FALLBACK_PALETTE = ["#F97C56", "#3B7A57", "#2B749E", "#7053A8", "#A67C1E", "#D96B43"];
+
+function fallbackColor(index: number): string {
+  return FALLBACK_PALETTE[index % FALLBACK_PALETTE.length];
+}
+
+type CalendarIdentity = { id: string; name: string; color: string };
+
 // ---------------------------------------------------------------------------
 // Read: events (not just freebusy) so real titles can be shown (SPEC.md §3/§4/§6).
+// Queried across every calendar in the account, not just the primary/default
+// one — a user's real commitments are often split across a work calendar, a
+// shared calendar, etc., and busy time on any of them should count. Each
+// calendar's own name and color (as the user already set it up in Google/
+// Outlook) are carried onto every BusyBlock for the legend/chip coloring.
 // ---------------------------------------------------------------------------
 
 type GoogleEventsResponse = {
@@ -58,7 +74,31 @@ type GoogleEventsResponse = {
   }>;
 };
 
-async function fetchGoogleEvents(connection: CalendarConnection, start: Date, end: Date): Promise<BusyBlock[]> {
+type GoogleCalendarListResponse = {
+  items?: Array<{ id: string; summary?: string; backgroundColor?: string }>;
+};
+
+async function fetchGoogleCalendars(connection: CalendarConnection): Promise<CalendarIdentity[]> {
+  const response = await fetch("https://www.googleapis.com/calendar/v3/users/me/calendarList", {
+    headers: { Authorization: `Bearer ${connection.accessToken}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to list Google calendars: ${await response.text()}`);
+  }
+  const data = (await response.json()) as GoogleCalendarListResponse;
+  return (data.items ?? []).map((item, index) => ({
+    id: item.id,
+    name: item.summary ?? item.id,
+    color: item.backgroundColor ?? fallbackColor(index),
+  }));
+}
+
+async function fetchGoogleEventsForCalendar(
+  connection: CalendarConnection,
+  calendar: CalendarIdentity,
+  start: Date,
+  end: Date,
+): Promise<BusyBlock[]> {
   const params = new URLSearchParams({
     timeMin: start.toISOString(),
     timeMax: end.toISOString(),
@@ -68,11 +108,11 @@ async function fetchGoogleEvents(connection: CalendarConnection, start: Date, en
   });
 
   const response = await fetch(
-    `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params.toString()}`,
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendar.id)}/events?${params.toString()}`,
     { headers: { Authorization: `Bearer ${connection.accessToken}` } },
   );
   if (!response.ok) {
-    throw new Error(`Google events fetch failed: ${await response.text()}`);
+    throw new Error(`Google events fetch failed for ${calendar.id}: ${await response.text()}`);
   }
 
   const data = (await response.json()) as GoogleEventsResponse;
@@ -83,14 +123,36 @@ async function fetchGoogleEvents(connection: CalendarConnection, start: Date, en
       (event) =>
         event.status !== "cancelled" &&
         event.transparency !== "transparent" && // "transparent" = marked as free, doesn't block
-        !!event.start.dateTime, // skip all-day events (those use `date`, not `dateTime`)
+        !!event.start.dateTime, // skip all-day events (those use `date`, not `dateTime`) — also filters out most Holidays/Birthdays calendar noise
     )
     .map((event) => ({
       start: event.start.dateTime!,
       end: event.end.dateTime!,
       source: "google" as const,
       title: event.summary,
+      calendarId: calendar.id,
+      calendarName: calendar.name,
+      color: calendar.color,
     }));
+}
+
+async function fetchGoogleEvents(connection: CalendarConnection, start: Date, end: Date): Promise<BusyBlock[]> {
+  let calendars: CalendarIdentity[];
+  try {
+    calendars = await fetchGoogleCalendars(connection);
+  } catch {
+    calendars = [];
+  }
+  if (calendars.length === 0) {
+    calendars = [{ id: "primary", name: "Google Calendar", color: fallbackColor(0) }]; // fall back to what v1 originally queried if listing fails
+  }
+
+  const results = await Promise.all(
+    calendars.map((calendar) =>
+      fetchGoogleEventsForCalendar(connection, calendar, start, end).catch(() => [] as BusyBlock[]),
+    ),
+  );
+  return results.flat();
 }
 
 type MicrosoftCalendarViewResponse = {
@@ -103,7 +165,45 @@ type MicrosoftCalendarViewResponse = {
   }>;
 };
 
-async function fetchMicrosoftEvents(connection: CalendarConnection, start: Date, end: Date): Promise<BusyBlock[]> {
+type MicrosoftCalendarListResponse = {
+  value?: Array<{ id: string; name?: string; color?: string; hexColor?: string }>;
+};
+
+// Graph's `color` field is a named preset, not a hex value — approximate the
+// ones we know; anything else (including "auto") falls back to the palette.
+const MICROSOFT_COLOR_HEX: Record<string, string> = {
+  lightBlue: "#4A9FE8",
+  lightGreen: "#6BCB77",
+  lightOrange: "#FFA552",
+  lightGray: "#9AA0A6",
+  lightYellow: "#F4D35E",
+  lightTeal: "#4FB6A8",
+  lightPink: "#F6A6C1",
+  lightBrown: "#A9744F",
+  lightRed: "#E86A6A",
+};
+
+async function fetchMicrosoftCalendars(connection: CalendarConnection): Promise<CalendarIdentity[]> {
+  const response = await fetch("https://graph.microsoft.com/v1.0/me/calendars", {
+    headers: { Authorization: `Bearer ${connection.accessToken}` },
+  });
+  if (!response.ok) {
+    throw new Error(`Failed to list Outlook calendars: ${await response.text()}`);
+  }
+  const data = (await response.json()) as MicrosoftCalendarListResponse;
+  return (data.value ?? []).map((item, index) => ({
+    id: item.id,
+    name: item.name ?? item.id,
+    color: item.hexColor?.trim() || MICROSOFT_COLOR_HEX[item.color ?? ""] || fallbackColor(index),
+  }));
+}
+
+async function fetchMicrosoftEventsForCalendar(
+  connection: CalendarConnection,
+  calendar: CalendarIdentity | null,
+  start: Date,
+  end: Date,
+): Promise<BusyBlock[]> {
   const params = new URLSearchParams({
     startDateTime: start.toISOString(),
     endDateTime: end.toISOString(),
@@ -111,18 +211,25 @@ async function fetchMicrosoftEvents(connection: CalendarConnection, start: Date,
     $top: "999",
   });
 
-  const response = await fetch(`https://graph.microsoft.com/v1.0/me/calendarView?${params.toString()}`, {
+  // A null calendar means "default calendar" — the same endpoint this app
+  // used before calendars were enumerated, kept as a fallback.
+  const url = calendar
+    ? `https://graph.microsoft.com/v1.0/me/calendars/${calendar.id}/calendarView?${params.toString()}`
+    : `https://graph.microsoft.com/v1.0/me/calendarView?${params.toString()}`;
+
+  const response = await fetch(url, {
     headers: {
       Authorization: `Bearer ${connection.accessToken}`,
       Prefer: 'outlook.timezone="UTC"',
     },
   });
   if (!response.ok) {
-    throw new Error(`Microsoft calendar fetch failed: ${await response.text()}`);
+    throw new Error(`Microsoft calendar fetch failed for ${calendar?.id ?? "default"}: ${await response.text()}`);
   }
 
   const data = (await response.json()) as MicrosoftCalendarViewResponse;
   const events = data.value ?? [];
+  const identity: CalendarIdentity = calendar ?? { id: "default", name: "Outlook Calendar", color: fallbackColor(0) };
 
   return events
     .filter((event) => !event.isAllDay && (event.showAs === "busy" || event.showAs === "oof"))
@@ -133,7 +240,29 @@ async function fetchMicrosoftEvents(connection: CalendarConnection, start: Date,
       end: `${event.end.dateTime}Z`,
       source: "microsoft" as const,
       title: event.subject,
+      calendarId: identity.id,
+      calendarName: identity.name,
+      color: identity.color,
     }));
+}
+
+async function fetchMicrosoftEvents(connection: CalendarConnection, start: Date, end: Date): Promise<BusyBlock[]> {
+  let calendars: CalendarIdentity[];
+  try {
+    calendars = await fetchMicrosoftCalendars(connection);
+  } catch {
+    calendars = [];
+  }
+  if (calendars.length === 0) {
+    return fetchMicrosoftEventsForCalendar(connection, null, start, end); // fall back to the default calendar
+  }
+
+  const results = await Promise.all(
+    calendars.map((calendar) =>
+      fetchMicrosoftEventsForCalendar(connection, calendar, start, end).catch(() => [] as BusyBlock[]),
+    ),
+  );
+  return results.flat();
 }
 
 export async function fetchCalendarEvents(start: Date, end: Date): Promise<BusyBlock[]> {

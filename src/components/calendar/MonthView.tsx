@@ -1,5 +1,6 @@
 import { addDays, isSameDay, startOfMonth, startOfWeek, toISODate } from "@/src/lib/date-utils";
-import type { Task } from "@/src/lib/types";
+import type { BusyBlock, Task } from "@/src/lib/types";
+import { BusyBlockChip } from "./BusyBlockChip";
 import { TaskChip } from "./TaskChip";
 
 const MAX_VISIBLE = 3;
@@ -8,9 +9,11 @@ const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; // mat
 export function MonthView({
   anchorDate,
   tasksByDate,
+  busyBlocksByDate,
 }: {
   anchorDate: Date;
   tasksByDate: Map<string, Task[]>;
+  busyBlocksByDate?: Map<string, BusyBlock[]>;
 }) {
   const monthStart = startOfMonth(anchorDate);
   const gridStart = startOfWeek(monthStart);
@@ -30,6 +33,7 @@ export function MonthView({
         {days.map((day) => {
         const key = toISODate(day);
         const tasks = tasksByDate.get(key) ?? [];
+        const busyBlocks = busyBlocksByDate?.get(key) ?? [];
         const inMonth = day.getMonth() === monthStart.getMonth();
         const isToday = isSameDay(day, today);
         const visible = tasks.slice(0, MAX_VISIBLE);
@@ -57,6 +61,9 @@ export function MonthView({
               <span className="font-quicksand text-xs font-bold text-foreground">{day.getDate()}</span>
             )}
             <div className="flex flex-col gap-1">
+              {busyBlocks.map((block, i) => (
+                <BusyBlockChip key={`busy-${i}`} block={block} compact />
+              ))}
               {visible.map((task) => (
                 <TaskChip key={task.id} task={task} compact />
               ))}

@@ -256,7 +256,7 @@ export function PlannerApp() {
           <GoalEntryForm onSubmit={handleCreateGoal} />
 
           <main className="relative overflow-hidden rounded-[2.5rem] border border-[#f0e8dc] bg-surface-card/95 p-6 shadow-[0_8px_32px_-4px_rgba(184,150,120,0.08),0_2px_8px_-1px_rgba(184,150,120,0.04)] sm:p-8">
-            <EmptyCalendarPreview dimmed={showConnectModal} />
+            <EmptyCalendarPreview dimmed={showConnectModal} connections={connections} />
             {showConnectModal && <ConnectCalendarScreen onSkip={handleSkipConnect} />}
           </main>
 

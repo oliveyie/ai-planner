@@ -80,6 +80,9 @@ export const busyBlockSchema = z.object({
   end: z.string(),
   source: calendarProviderSchema,
   title: z.string().optional(),
+  calendarId: z.string(),
+  calendarName: z.string(),
+  color: z.string(),
 });
 
 export const chatMessageSchema = z.object({

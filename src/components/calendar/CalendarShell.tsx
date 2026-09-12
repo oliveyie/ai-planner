@@ -12,6 +12,7 @@ import { flattenTasks, groupBusyBlocksByDate, groupTasksByDate } from "@/src/lib
 import { TASK_TYPE_STYLES } from "@/src/lib/task-colors";
 import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, Plan } from "@/src/lib/types";
 import { AgendaList } from "./AgendaList";
+import { CalendarLegend } from "./CalendarLegend";
 import { MonthView } from "./MonthView";
 import { PushControls } from "./PushControls";
 import { WeekView } from "./WeekView";
@@ -122,6 +123,7 @@ export function CalendarShell({
           </div>
 
           <div className="flex flex-wrap items-center gap-3 font-quicksand text-xs font-medium text-clay">
+            <span className="font-bold text-clay-light">Plan:</span>
             {(Object.keys(TASK_TYPE_STYLES) as Array<keyof typeof TASK_TYPE_STYLES>).map((type) => (
               <div key={type} className="flex items-center gap-1.5">
                 <span className={`h-2.5 w-2.5 rounded-full ${TASK_TYPE_STYLES[type].dot}`} />
@@ -131,11 +133,15 @@ export function CalendarShell({
           </div>
         </div>
 
+        <CalendarLegend busyBlocks={busyBlocks} />
+
         {view === "week" && (
           <WeekView anchorDate={anchorDate} tasksByDate={tasksByDate} busyBlocksByDate={busyBlocksByDate} />
         )}
-        {view === "month" && <MonthView anchorDate={anchorDate} tasksByDate={tasksByDate} />}
-        {view === "agenda" && <AgendaList tasksByDate={tasksByDate} />}
+        {view === "month" && (
+          <MonthView anchorDate={anchorDate} tasksByDate={tasksByDate} busyBlocksByDate={busyBlocksByDate} />
+        )}
+        {view === "agenda" && <AgendaList tasksByDate={tasksByDate} busyBlocksByDate={busyBlocksByDate} />}
       </div>
     </div>
   );
