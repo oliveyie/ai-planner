@@ -1,13 +1,16 @@
 import { addDays, formatDayLabel, isSameDay, startOfWeek, toISODate } from "@/src/lib/date-utils";
-import type { Task } from "@/src/lib/types";
+import type { BusyBlock, Task } from "@/src/lib/types";
+import { BusyBlockChip } from "./BusyBlockChip";
 import { TaskChip } from "./TaskChip";
 
 export function WeekView({
   anchorDate,
   tasksByDate,
+  busyBlocksByDate,
 }: {
   anchorDate: Date;
   tasksByDate: Map<string, Task[]>;
+  busyBlocksByDate?: Map<string, BusyBlock[]>;
 }) {
   const weekStart = startOfWeek(anchorDate);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -18,6 +21,7 @@ export function WeekView({
       {days.map((day) => {
         const key = toISODate(day);
         const tasks = tasksByDate.get(key) ?? [];
+        const busyBlocks = busyBlocksByDate?.get(key) ?? [];
         return (
           <div
             key={key}
@@ -27,6 +31,9 @@ export function WeekView({
           >
             <div className="text-xs font-medium text-foreground/60">{formatDayLabel(day)}</div>
             <div className="flex flex-col gap-1">
+              {busyBlocks.map((block, i) => (
+                <BusyBlockChip key={`busy-${i}`} block={block} />
+              ))}
               {tasks.map((task) => (
                 <TaskChip key={task.id} task={task} />
               ))}

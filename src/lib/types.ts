@@ -55,18 +55,24 @@ export type Task = {
   scheduledEnd?: string; // ISO datetime
   schedulingStatus: SchedulingStatus;
 
-  googleEventId?: string;
+  syncedEventId?: string;
+  syncedProvider?: "google" | "microsoft";
 };
 
+export type CalendarProvider = "google" | "microsoft";
+
 export type CalendarConnection = {
-  provider: "google";
+  provider: CalendarProvider;
   connectedAt: string;
+  accessToken: string;
+  refreshToken?: string;
+  expiresAt: string; // ISO datetime; past this, accessToken must be refreshed before use.
 };
 
 export type BusyBlock = {
   start: string; // ISO datetime
   end: string; // ISO datetime
-  source: "google";
+  source: CalendarProvider;
 };
 
 export type ChatMessage = {

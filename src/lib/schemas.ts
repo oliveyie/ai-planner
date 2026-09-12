@@ -23,7 +23,8 @@ export const taskSchema = z.object({
   scheduledEnd: z.string().optional(),
   schedulingStatus: schedulingStatusSchema,
 
-  googleEventId: z.string().optional(),
+  syncedEventId: z.string().optional(),
+  syncedProvider: z.enum(["google", "microsoft"]).optional(),
 });
 
 export const weekSchema = z.object({
@@ -62,15 +63,20 @@ export const goalSchema = z.object({
   createdAt: z.string(),
 });
 
+export const calendarProviderSchema = z.enum(["google", "microsoft"]);
+
 export const calendarConnectionSchema = z.object({
-  provider: z.literal("google"),
+  provider: calendarProviderSchema,
   connectedAt: z.string(),
+  accessToken: z.string(),
+  refreshToken: z.string().optional(),
+  expiresAt: z.string(),
 });
 
 export const busyBlockSchema = z.object({
   start: z.string(),
   end: z.string(),
-  source: z.literal("google"),
+  source: calendarProviderSchema,
 });
 
 export const chatMessageSchema = z.object({

@@ -2,7 +2,7 @@
 // client components, inside effects — never during server rendering.
 
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import type { CalendarConnection, ChatMessage, Goal, Plan } from "./types";
+import type { CalendarConnection, CalendarProvider, ChatMessage, Goal, Plan } from "./types";
 
 const DB_NAME = "ai-planner";
 const DB_VERSION = 1;
@@ -87,4 +87,26 @@ export async function getChatMessages(goalId: string): Promise<ChatMessage[]> {
   return messages.sort(
     (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
   );
+}
+
+export async function saveCalendarConnection(connection: CalendarConnection): Promise<void> {
+  const db = await getDb();
+  await db.put("calendarConnections", connection);
+}
+
+export async function getCalendarConnection(
+  provider: CalendarProvider,
+): Promise<CalendarConnection | undefined> {
+  const db = await getDb();
+  return db.get("calendarConnections", provider);
+}
+
+export async function getAllCalendarConnections(): Promise<CalendarConnection[]> {
+  const db = await getDb();
+  return db.getAll("calendarConnections");
+}
+
+export async function deleteCalendarConnection(provider: CalendarProvider): Promise<void> {
+  const db = await getDb();
+  await db.delete("calendarConnections", provider);
 }

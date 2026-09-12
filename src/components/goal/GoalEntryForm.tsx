@@ -1,12 +1,11 @@
 "use client";
 
 import { useState, type FormEvent, type KeyboardEvent } from "react";
-import type { Goal, Plan } from "@/src/lib/types";
 
 export function GoalEntryForm({
-  onCreated,
+  onSubmit,
 }: {
-  onCreated: (goal: Goal, plan: Plan) => void | Promise<void>;
+  onSubmit: (title: string) => Promise<void>;
 }) {
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -20,18 +19,7 @@ export function GoalEntryForm({
     setError(null);
 
     try {
-      const response = await fetch("/api/plan/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title }),
-      });
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate plan");
-      }
-
-      await onCreated(data.goal as Goal, data.plan as Plan);
+      await onSubmit(title);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {

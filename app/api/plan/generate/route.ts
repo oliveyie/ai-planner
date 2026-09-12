@@ -1,12 +1,13 @@
 import { generatePlan } from "@/src/lib/generate-plan";
 import { makeId } from "@/src/lib/ids";
 import { toISODate } from "@/src/lib/date-utils";
-import type { Goal } from "@/src/lib/types";
+import type { BusyBlock, Goal } from "@/src/lib/types";
 
 type GenerateRequestBody = {
   title?: string;
   startDate?: string;
   targetDate?: string;
+  busyBlocks?: BusyBlock[];
 };
 
 export async function POST(request: Request) {
@@ -27,9 +28,10 @@ export async function POST(request: Request) {
   };
 
   try {
-    // No calendar connection yet (SPEC.md §10 step 2 is deferred) — an empty
-    // busy-blocks list is a normal, valid input to the scheduler.
-    const { plan, resolvedTargetDate } = await generatePlan(goal, []);
+    // busyBlocks comes from the client, which is where calendar connections
+    // (and their tokens) live — see SPEC.md §3. An empty/missing list (no
+    // calendar connected) is a normal, valid input to the scheduler.
+    const { plan, resolvedTargetDate } = await generatePlan(goal, body.busyBlocks ?? []);
 
     if (!goal.targetDate && resolvedTargetDate) {
       goal.targetDate = resolvedTargetDate;

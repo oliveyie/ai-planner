@@ -1,5 +1,5 @@
 import { parseISODateTime, toISODate } from "./date-utils";
-import type { Plan, Task } from "./types";
+import type { BusyBlock, Plan, Task } from "./types";
 
 // Deterministic (not LLM-generated) prose outline of an already-generated
 // plan, for the chat transcript shown before the calendar (see the "reveal
@@ -47,6 +47,26 @@ export function groupTasksByDate(tasks: Task[]): Map<string, Task[]> {
   }
   for (const list of map.values()) {
     list.sort((a, b) => (a.scheduledStart ?? "").localeCompare(b.scheduledStart ?? ""));
+  }
+  return map;
+}
+
+// BusyBlock times are real ISO 8601 datetimes from an external provider
+// (with an offset/Z), unlike this app's own local-only date-utils format —
+// parsed with the native Date constructor, same rationale as scheduler.ts.
+export function groupBusyBlocksByDate(blocks: BusyBlock[]): Map<string, BusyBlock[]> {
+  const map = new Map<string, BusyBlock[]>();
+  for (const block of blocks) {
+    const key = toISODate(new Date(block.start));
+    const list = map.get(key);
+    if (list) {
+      list.push(block);
+    } else {
+      map.set(key, [block]);
+    }
+  }
+  for (const list of map.values()) {
+    list.sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
   }
   return map;
 }

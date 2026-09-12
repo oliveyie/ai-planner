@@ -112,7 +112,10 @@ type Task = {
 type CalendarConnection = {
   provider: 'google' | 'microsoft'   // v1 (revised): both, for reading busy time and (one at a time) writing the plan. Apple/iCloud stays out — see §8.
   connectedAt: string
-  // OAuth tokens stored alongside this in IndexedDB, not on the server (see §3 tension note).
+  accessToken: string
+  refreshToken?: string         // Google/Microsoft both return one when offline_access/access_type=offline is requested; used to get a new accessToken via the server refresh route without re-login.
+  expiresAt: string             // ISO datetime; past this, accessToken must be refreshed before use.
+  // Tokens stored in IndexedDB, not on the server (see §3 tension note).
   // One CalendarConnection record per connected provider — both can exist at once.
 }
 

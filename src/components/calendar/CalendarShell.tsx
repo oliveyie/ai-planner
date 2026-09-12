@@ -8,8 +8,8 @@ import {
   formatWeekRangeLabel,
   parseISODate,
 } from "@/src/lib/date-utils";
-import { flattenTasks, groupTasksByDate } from "@/src/lib/plan-utils";
-import type { Goal, Plan } from "@/src/lib/types";
+import { flattenTasks, groupBusyBlocksByDate, groupTasksByDate } from "@/src/lib/plan-utils";
+import type { BusyBlock, Goal, Plan } from "@/src/lib/types";
 import { AgendaList } from "./AgendaList";
 import { MonthView } from "./MonthView";
 import { WeekView } from "./WeekView";
@@ -18,11 +18,20 @@ type ViewMode = "week" | "month" | "agenda";
 
 const VIEW_MODES: ViewMode[] = ["week", "month", "agenda"];
 
-export function CalendarShell({ goal, plan }: { goal: Goal; plan: Plan }) {
+export function CalendarShell({
+  goal,
+  plan,
+  busyBlocks = [],
+}: {
+  goal: Goal;
+  plan: Plan;
+  busyBlocks?: BusyBlock[];
+}) {
   const [view, setView] = useState<ViewMode>("month");
   const [anchorDate, setAnchorDate] = useState<Date>(() => parseISODate(goal.startDate));
 
   const tasksByDate = groupTasksByDate(flattenTasks(plan));
+  const busyBlocksByDate = groupBusyBlocksByDate(busyBlocks);
 
   const label =
     view === "month"
@@ -77,7 +86,9 @@ export function CalendarShell({ goal, plan }: { goal: Goal; plan: Plan }) {
         </div>
       </div>
 
-      {view === "week" && <WeekView anchorDate={anchorDate} tasksByDate={tasksByDate} />}
+      {view === "week" && (
+        <WeekView anchorDate={anchorDate} tasksByDate={tasksByDate} busyBlocksByDate={busyBlocksByDate} />
+      )}
       {view === "month" && <MonthView anchorDate={anchorDate} tasksByDate={tasksByDate} />}
       {view === "agenda" && <AgendaList tasksByDate={tasksByDate} />}
     </div>

@@ -95,3 +95,47 @@ SPEC.md §10 step 4: *"Chat panel + `refinePlan()` ... constraint history, regen
 Typing a follow-up in the chat composer (e.g. a day-of-week constraint) produces an updated plan version, appends both the user's message and a new assistant outline to the transcript, and the calendar visibly reflects the change — all persisted to IndexedDB.
 
 **Status: done**, verified in a real browser against the real OpenAI API. Sent "Only do long runs on Sundays, no exceptions." after generating a Seattle Marathon plan: `Goal.constraints` recorded the message, `Plan.version` went from 1 to 2, 4 chat messages persisted (goal → outline → refinement → updated outline), and the two long-run tasks visibly moved on the calendar from Saturday to Sunday between the "before" and "after" screenshots.
+
+# Task breakdown — Step 2
+
+SPEC.md §10 step 2, revised scope: Google **and** Microsoft/Outlook OAuth connect + freebusy fetch, merged into one `BusyBlock[]`, feeding the scheduler that's already built. Both providers' credentials (`GOOGLE_CLIENT_ID/SECRET`, `MICROSOFT_CLIENT_ID/SECRET`) are now in `.env.local`.
+
+**Architecture note**: only the token *exchange* (auth code → tokens) and *refresh* need the server, since those require the client secret. The actual freebusy *read* calls go straight from the browser to Google/Microsoft's APIs using the stored access token — no server proxy for those (both APIs support CORS for this). This matches the "stateless relay" design in SPEC.md §3 — the server never sees or stores tokens beyond the single exchange/refresh request.
+
+**Scope trim**: the original step 2 description imagined seeing busy blocks on a standalone calendar view *before* any goal exists. Since the calendar view (`CalendarShell`) is built around an existing `Plan`, this pass instead: (a) shows a connect-or-skip screen before goal entry, (b) fetches busy blocks and feeds them into generation/refinement so the scheduler actually avoids conflicts, and (c) renders busy blocks (grey, untitled) on the calendar once a plan exists. A dedicated pre-goal "here's what's already on your calendar" preview is deferred to step 6 polish.
+
+**Testing note**: I can verify everything up through redirecting to Google's/Microsoft's real sign-in page, and I can unit-test the scheduler against fabricated busy blocks — but completing an actual login requires a real account's credentials/2FA, which only you can do. I'll flag exactly what needs manual testing once this is built.
+
+## Data model + persistence
+
+- [x] Extend `CalendarConnection` (types.ts, schemas.ts, SPEC.md §4) with the actual token fields: `accessToken`, `refreshToken?`, `expiresAt`.
+- [x] `db.ts`: add `saveCalendarConnection`, `getCalendarConnection(provider)`, `getAllCalendarConnections()`, `deleteCalendarConnection(provider)`.
+
+## OAuth (server-only, per provider)
+
+- [x] `src/lib/oauth-providers.ts` — shared config/helpers for both providers (authorize URL builder, token exchange, refresh), so the two providers can't drift in how they're handled.
+- [x] `app/api/auth/{google,microsoft}/start/route.ts` — redirect to the provider's authorize URL (state param in a short-lived cookie for CSRF protection).
+- [x] `app/api/auth/{google,microsoft}/callback/route.ts` — verify state, exchange code for tokens server-side, redirect to `/` with tokens in the URL **fragment** (not query string — never sent over the network) for the client to pick up and store.
+- [x] `app/api/auth/{google,microsoft}/refresh/route.ts` — takes a refresh token, returns a fresh access token + expiry.
+
+## Client-side calendar API + connect UI
+
+- [x] `src/lib/calendar-api.ts` — `fetchFreeBusy(start, end)`: for each connected provider, refresh the access token first if expired (via the refresh route), then call the provider's freebusy/calendarView endpoint directly from the browser, merging results into one `BusyBlock[]`. (Microsoft uses `/me/calendarView`, not `getSchedule` — the latter needs the account's own email address to query itself, which we don't have on hand; calendarView needs only the token.)
+- [x] `src/components/calendar/ConnectCalendarScreen.tsx` — "Connect Google Calendar" / "Connect Outlook Calendar" buttons + a "Skip for now" link, shown before goal entry.
+- [x] `PlannerApp.tsx`: parse `window.location.hash` on mount for OAuth tokens, save the connection, clean the URL; show `ConnectCalendarScreen` when there's no connection and no goal yet (skip choice persisted in `localStorage` so it doesn't nag again); fetch busy blocks before generate/refine calls and include them in the request instead of the hardcoded `[]`.
+- [x] `GoalEntryForm` refactored to delegate the actual API call to `PlannerApp` (an `onSubmit` prop, matching how `ChatComposer`/`handleRefine` already worked) — needed so busy blocks can be fetched before the generate request is built, not after.
+
+## Calendar rendering
+
+- [x] `WeekView`: accept and render busy blocks — grey, dashed, untitled (time range only), read-only — alongside plan tasks. **Scope trim**: `MonthView` and `AgendaList` were left out — month cells are already dense with a task overflow ("+N more"); adding busy blocks there would need its own overflow handling. Week view is the primary place busy context matters anyway.
+
+## Definition of done for step 2
+
+Connecting Google and/or Microsoft actually redirects to that provider's real sign-in/consent page and, after a real login, lands back in the app with a stored connection. Generating or refining a plan with a connection active fetches real busy blocks and the scheduler avoids them (verifiable by fabricating a conflict). Skipping the connect screen leaves the app working exactly as it does today (empty busy-blocks list).
+
+**Status: built and verified as far as possible without a real account login** (see testing note above — completing an actual Google/Microsoft sign-in requires real credentials/2FA that only the user has):
+- Confirmed both `/api/auth/{google,microsoft}/start` redirect to the correct real authorize URLs, with the correct client ID, redirect URI, scopes, and a state cookie set (checked via raw HTTP response, not a browser).
+- Confirmed the callback route safely rejects a missing/mismatched `state` (redirects with `calendar_error` rather than crashing), and found + fixed a real bug in the same pass: the error banner was only rendered in the goal-entry branch, so a failed OAuth attempt (leaving zero connections) would loop back to `ConnectCalendarScreen` with the error invisible. Fixed by hoisting the banner above both branches.
+- Verified in a real browser: fresh load shows the connect screen; `?calendar_error=...` shows the banner and gets stripped from the URL; "Skip for now" moves to goal entry and persists across a reload.
+- **The functional core** — does the scheduler actually avoid busy time? — verified by POSTing directly to `/api/plan/generate` with a fabricated 14-day `busyBlocks` list (6am–12pm blocked every day), bypassing OAuth entirely since this is the same code path a real connection feeds into. Every task that landed within the 14-day covered window was scheduled at exactly 12:00 — the first free slot after the blocked window — confirming the busy-blocks plumbing (client → API → `generatePlan` → `scheduleTasks`) works correctly end to end.
+- **Not yet verified**: the actual OAuth consent screen + callback completing with a real account, and `BusyBlockChip` rendering with real (not fabricated) data — both need the user to actually click "Connect Google Calendar" / "Connect Outlook Calendar" and log in themselves.
