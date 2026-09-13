@@ -1,24 +1,17 @@
 import { parseISODateTime, toISODate } from "./date-utils";
 import type { BusyBlock, Plan, Task } from "./types";
 
-// Deterministic (not LLM-generated) prose outline of an already-generated
-// plan, for the chat transcript shown before the calendar (see the "reveal
-// order" decision in SPEC.md). Built from the same data the calendar renders,
-// so it can never describe something different from what's actually
-// scheduled — no extra LLM call, no risk of drift.
-export function buildPlanOutlineMessage(plan: Plan): string {
-  const phaseLines = plan.phases.map((phase) => {
-    const weekCount = phase.weeks.length;
-    return `- ${phase.name} (${phase.startDate} to ${phase.endDate}, ${weekCount} week${weekCount === 1 ? "" : "s"})`;
-  });
-
-  const lines = [plan.summary, "", "Phases:", ...phaseLines];
+// Deterministic (not LLM-generated) short status line for the Mr. Whimble
+// chat box. The plan's own summary + phase/step breakdown is shown in
+// PlanSummaryCard instead (built from the same `plan` data, so it can never
+// drift) — this is just the "done" ping plus any assumptions the user might
+// want to correct, in Whimble's voice (see whimble-voice.ts).
+export function buildPlanChatMessage(plan: Plan): string {
+  const lines = ["calendar's ready. look below."];
 
   if (plan.assumptions.length > 0) {
     lines.push("", ...plan.assumptions);
   }
-
-  lines.push("", "I've laid it out on the calendar below.");
 
   return lines.join("\n");
 }

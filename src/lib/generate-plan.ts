@@ -19,6 +19,7 @@ import {
 } from "./llm-schemas";
 import { scheduleTasks } from "./scheduler";
 import type { BusyBlock, Goal, Phase, Plan, Task, Week } from "./types";
+import { WHIMBLE_VOICE_GUIDE } from "./whimble-voice";
 
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
@@ -81,9 +82,11 @@ const PLAN_RULES = `Rules:
 - Honor every constraint listed, exactly.
 - If the goal did not specify a target date, estimate a reasonable one from context (typical timelines for this kind of goal) and put it in "targetDate". If the goal did specify one, set "targetDate" to null.
 - Date consistency is a hard requirement, not a suggestion: every phase's startDate/endDate and every task's preferredDate MUST fall between the goal's startDate and your chosen targetDate (inclusive), with no exceptions. Before responding, check this yourself: does your last phase's endDate line up with targetDate, and does every date you wrote actually fall inside that span? If your "summary" states a duration (e.g. "3 months"), the actual dates you produce must match that duration — don't let phases drift past what you just said the timeline was.
-- Record anything you had to assume due to missing information (target date, experience level, availability, etc.) in "assumptions", each phrased as an invitation for the user to correct it rather than a caveat — e.g. "Assumed a beginner starting point — tell me your current level and I can tailor this further."
+- Record anything you had to assume due to missing information (target date, experience level, availability, etc.) in "assumptions", each phrased as an invitation for the user to correct it rather than a caveat — e.g. "guessed beginner level. wrong? tell whimble."
 - Use the "type" field on each task appropriately: "task" for a normal concrete activity, "milestone" for a fixed checkpoint/deadline, "review" for a periodic check-in, "rest" for a deliberate break.
-- Only set "preferredDaysOfWeek" on a task when a constraint specifically restricts which days it can happen on.`;
+- Only set "preferredDaysOfWeek" on a task when a constraint specifically restricts which days it can happen on.
+- "summary" and every entry in "assumptions" are spoken by Whimble, the app's mascot, and must be written in his voice: ${WHIMBLE_VOICE_GUIDE}
+- Everything else — task titles, descriptions, phase names, week focuses, dates — stays in plain, clear English. Whimble's voice is only for "summary" and "assumptions".`;
 
 const GENERATE_SYSTEM_PROMPT = `You are a planning assistant. Given a high-level goal, produce a phased, dated plan broken into concrete tasks that could be placed on a calendar.
 
@@ -166,6 +169,7 @@ const CRITIQUE_SYSTEM_PROMPT = `You are reviewing a generated plan for quality b
 3. Does the phase/week/task structure genuinely fit this specific goal, rather than reading like a generic or fitness-flavored template applied to a non-fitness goal?
 4. Are task durations and cadence reasonable for this kind of goal?
 5. Were all of the goal's constraints actually honored?
+6. Are "summary" and every entry in "assumptions" written in Whimble's voice? ${WHIMBLE_VOICE_GUIDE} If either reads like a generic corporate assistant instead, that alone is a reason to revise (rewrite them in revisedPlan, keeping everything else the same).
 
 If everything looks right (including an empty programmaticallyDetectedDateIssues list), respond with approved: true, empty notes, and revisedPlan: null.
 Otherwise respond with approved: false, a brief explanation in notes, and a corrected full plan in revisedPlan that fixes every issue found (same schema as the draft plan).`;
@@ -301,7 +305,7 @@ async function critiqueAndFinalize(
       ...finalLlmPlan,
       assumptions: [
         ...finalLlmPlan.assumptions,
-        `Note: ${remainingViolations.length} task/phase date${remainingViolations.length === 1 ? "" : "s"} may fall outside the intended timeframe and weren't fully corrected — let me know if you'd like specific dates adjusted.`,
+        `heads up: ${remainingViolations.length} date${remainingViolations.length === 1 ? "" : "s"} might sit outside plan timeframe. say so, whimble fix.`,
       ],
     };
   }

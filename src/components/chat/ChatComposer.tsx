@@ -63,7 +63,7 @@ export function ChatComposer({
           Send
         </button>
       </form>
-      {submitting && <p className="text-sm text-clay">Updating your plan…</p>}
+      {submitting && <p className="text-sm text-clay">whimble fixing plan…</p>}
       {error && <p className="text-sm text-peach-dark">{error}</p>}
     </div>
   );

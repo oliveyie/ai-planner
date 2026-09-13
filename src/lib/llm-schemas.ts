@@ -105,8 +105,11 @@ const phaseJsonSchema = {
 export const planJsonSchema = {
   type: "object",
   properties: {
-    summary: { type: "string" },
-    assumptions: { type: "array", items: { type: "string" } },
+    summary: { type: "string", description: "In Whimble's voice — see the system prompt's voice guide." },
+    assumptions: {
+      type: "array",
+      items: { type: "string", description: "In Whimble's voice — see the system prompt's voice guide." },
+    },
     targetDate: {
       type: ["string", "null"],
       description: "ISO date. Only non-null if the goal didn't supply one and you had to estimate it.",

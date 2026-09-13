@@ -59,10 +59,27 @@ export function PlanSummaryCard({ goal, plan }: { goal: Goal; plan: Plan }) {
           {totalWeeks} week{totalWeeks === 1 ? "" : "s"} • ~{avgPerWeek} session{avgPerWeek === 1 ? "" : "s"} a week
         </p>
 
+        <div className="mt-3 flex flex-col gap-1.5 text-xs text-clay">
+          <p>{plan.summary}</p>
+          <div>
+            <span className="font-semibold text-clay-light">steps:</span>
+            <ul className="mt-0.5 flex flex-col gap-0.5">
+              {plan.phases.map((phase) => {
+                const weekCount = phase.weeks.length;
+                return (
+                  <li key={phase.id}>
+                    - {phase.name} ({phase.startDate} to {phase.endDate}, {weekCount} week{weekCount === 1 ? "" : "s"})
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+
         <div className="mt-4 flex flex-col gap-3">
           {upcoming.length === 0 && (
             <p className="rounded-2xl border border-dashed border-[#EDE2D4] px-3.5 py-4 text-center font-fraunces text-sm text-clay-light">
-              Nothing left on the calendar — nice work!
+              all done. nice work.
             </p>
           )}
           {upcoming.map((task) => {
@@ -89,10 +106,10 @@ export function PlanSummaryCard({ goal, plan }: { goal: Goal; plan: Plan }) {
                 </div>
                 <div className="pl-9 text-xs font-semibold text-coral">
                   {task.schedulingStatus === "conflict"
-                    ? "Needs a new time slot"
+                    ? "needs new time"
                     : start && end
                       ? `${formatTimeLabel(start)} – ${formatTimeLabel(end)}`
-                      : "Not yet scheduled"}
+                      : "not scheduled"}
                 </div>
                 {task.description && <p className="mt-1 pl-9 text-xs text-clay-light">{task.description}</p>}
               </div>
@@ -105,10 +122,10 @@ export function PlanSummaryCard({ goal, plan }: { goal: Goal; plan: Plan }) {
         <span className="shrink-0 text-sage-dark">✿</span>
         {restDayNames.length > 0 ? (
           <span>
-            Rest days on <strong className="text-foreground">{restDayNames.join(", ")}</strong> are deliberately protected.
+            rest day <strong className="text-foreground">{restDayNames.join(", ")}</strong>. whimble protects these.
           </span>
         ) : (
-          <span>Plenty of breathing room is built in between sessions.</span>
+          <span>plenty of rest built in between.</span>
         )}
       </div>
     </div>

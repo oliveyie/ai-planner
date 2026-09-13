@@ -9,11 +9,10 @@ export function ConnectCalendarScreen({ onSkip }: { onSkip: () => void }) {
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 p-4 backdrop-blur-[5px]">
       <div className="flex w-full max-w-lg flex-col items-center rounded-[2rem] border border-[#f0e3d0] bg-white/95 p-6 text-center shadow-[0_20px_48px_-10px_rgba(120,90,70,0.14)] sm:p-8">
         <h2 className="mb-2 font-fraunces text-xl font-semibold tracking-tight text-slate-800 sm:text-2xl">
-          Your calendar is looking a little lonely!
+          calendar lonely.
         </h2>
         <p className="mb-6 max-w-md text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
-          Connect it so we don&apos;t accidentally schedule a 5k run in the middle of your boss&apos;s keynote
-          monologue.
+          connect it. no double-booking boss&apos;s big meeting.
         </p>
 
         <div className="mb-5 flex w-full max-w-sm flex-col gap-3">
@@ -60,14 +59,14 @@ export function ConnectCalendarScreen({ onSkip }: { onSkip: () => void }) {
         </div>
 
         <p className="mb-3 text-[11px] font-medium tracking-wide text-slate-400">
-          Read-only access during draft planning • Zero surprise invites sent to your boss • 100% private
+          Peek only for now • No surprise invites • 100% private
         </p>
 
         <button
           onClick={onSkip}
           className="text-xs font-bold text-amber-700 underline decoration-amber-300 underline-offset-4 transition-colors hover:text-amber-800"
         >
-          Or skip for now &amp; explore as guest →
+          Skip for now, explore as guest →
         </button>
       </div>
     </div>

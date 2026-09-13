@@ -9,6 +9,7 @@ import { PushControls } from "@/src/components/calendar/PushControls";
 import { ChatComposer } from "@/src/components/chat/ChatComposer";
 import { GoalEntryForm } from "@/src/components/goal/GoalEntryForm";
 import { AppHeader } from "@/src/components/layout/AppHeader";
+import { WhimbleMascot } from "@/src/components/whimble/WhimbleMascot";
 import { fetchCalendarEvents, pushPlanToCalendar } from "@/src/lib/calendar-api";
 import { addDays, parseISODate } from "@/src/lib/date-utils";
 import {
@@ -23,7 +24,7 @@ import {
   savePlan,
 } from "@/src/lib/db";
 import { makeId } from "@/src/lib/ids";
-import { buildPlanOutlineMessage } from "@/src/lib/plan-utils";
+import { buildPlanChatMessage } from "@/src/lib/plan-utils";
 import type {
   BusyBlock,
   CalendarConnection,
@@ -169,7 +170,7 @@ export function PlannerApp() {
       id: makeId("msg"),
       goalId: newGoal.id,
       role: "assistant",
-      content: buildPlanOutlineMessage(newPlan),
+      content: buildPlanChatMessage(newPlan),
       createdAt: newPlan.generatedAt,
       resultingPlanVersion: newPlan.version,
     };
@@ -222,7 +223,7 @@ export function PlannerApp() {
       id: makeId("msg"),
       goalId: updatedGoal.id,
       role: "assistant",
-      content: buildPlanOutlineMessage(updatedPlan),
+      content: buildPlanChatMessage(updatedPlan),
       createdAt: updatedPlan.generatedAt,
       resultingPlanVersion: updatedPlan.version,
     };
@@ -306,14 +307,14 @@ export function PlannerApp() {
         <section className="flex flex-col gap-3 rounded-3xl border border-[#EFE5D8] bg-surface-card/90 p-4 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-5">
           <div className="flex items-center justify-between gap-3 border-b border-[#EDE2D4]/60 px-1 pb-3">
             <div className="flex items-center gap-2">
-              <span className="font-fraunces text-sm italic text-foreground">WhimsyCal Buddy</span>
-              <span className="h-1.5 w-1.5 rounded-full bg-sage-dark" />
+              <WhimbleMascot size="sm" />
+              <span className="font-fraunces text-sm italic text-foreground">Mr. Whimble</span>
             </div>
             <button
               onClick={handleNewGoal}
               className="text-sm font-semibold text-clay-light underline underline-offset-2 hover:text-clay"
             >
-              + New Goal
+              + New Whim
             </button>
           </div>
           {latestAssistantMessage && (

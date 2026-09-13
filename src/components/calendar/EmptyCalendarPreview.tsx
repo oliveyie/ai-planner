@@ -186,7 +186,7 @@ export function EmptyCalendarPreview({
           </div>
         ) : (
           <div className="flex min-h-[280px] items-center justify-center rounded-2xl border-[1.5px] border-dashed border-amber-300 bg-amber-50/20 p-6">
-            <span className="font-fraunces text-sm font-semibold text-amber-500">Nothing scheduled yet</span>
+            <span className="font-fraunces text-sm font-semibold text-amber-500">nothing here yet</span>
           </div>
         )
       ) : view === "week" ? (

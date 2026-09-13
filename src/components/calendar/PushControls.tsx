@@ -49,7 +49,7 @@ export function PushControls({
       </div>
       {successProvider && (
         <p className="text-xs font-semibold text-sage-dark">
-          Pushed to {CALENDAR_PROVIDER_NAMES[successProvider]}. 🌸
+          sent to {CALENDAR_PROVIDER_NAMES[successProvider]}. whimble did it. 🌸
         </p>
       )}
       {error && <p className="text-xs font-semibold text-peach-dark">{error}</p>}

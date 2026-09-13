@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { WhimbleMascot } from "@/src/components/whimble/WhimbleMascot";
 import { CALENDAR_PROVIDER_NAMES } from "@/src/lib/provider-labels";
 import type { CalendarConnection, CalendarProvider } from "@/src/lib/types";
 
@@ -38,9 +39,7 @@ export function AppHeader({
   return (
     <header className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-5">
       <div className="flex items-center gap-2.5 rounded-full border border-peach-dark/10 bg-surface-card px-3.5 py-1.5 shadow-sm">
-        <div className="w-7 h-7 rounded-full bg-buttercup flex items-center justify-center text-base ring-2 ring-buttercup-dark/20">
-          🟡
-        </div>
+        <WhimbleMascot size="sm" />
         <span className="font-fraunces font-semibold text-lg text-foreground tracking-tight">WhimsyCal</span>
       </div>
 
@@ -77,7 +76,7 @@ export function AppHeader({
                   </button>
                 ))
               ) : (
-                <p className="px-3 py-2 text-xs text-clay-light">No calendars connected yet.</p>
+                <p className="px-3 py-2 text-xs text-clay-light">no calendar yet.</p>
               )}
             </div>
           )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type FormEvent, type KeyboardEvent } from "react";
+import { WhimbleMascot } from "@/src/components/whimble/WhimbleMascot";
 
 export function GoalEntryForm({
   onSubmit,
@@ -44,10 +45,9 @@ export function GoalEntryForm({
       <div className="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full bg-peach/40 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-16 -left-12 h-56 w-56 rounded-full bg-buttercup/50 blur-2xl" />
 
-      <div className="relative z-10 flex flex-col items-center gap-4 text-center">
-        <h1 className="font-fraunces text-2xl font-semibold tracking-tight text-foreground">
-          What are your goals?
-        </h1>
+      <div className="relative z-10 flex flex-col items-center gap-3 text-center">
+        <WhimbleMascot size="lg" />
+        <h1 className="font-fraunces text-2xl font-semibold tracking-tight text-foreground">what you want?</h1>
 
         <form
           onSubmit={handleSubmit}
@@ -59,7 +59,7 @@ export function GoalEntryForm({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Tell me your whim…"
+            placeholder="tell me your whim…"
             disabled={submitting}
           />
           {message.trim() && (
@@ -68,7 +68,7 @@ export function GoalEntryForm({
               disabled={submitting}
               className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-coral px-7 py-3 text-sm font-bold tracking-wide text-white shadow-[0_4px_16px_rgba(249,124,86,0.3)] transition-all hover:bg-[#e86b45] hover:shadow-[0_6px_20px_rgba(249,124,86,0.4)] active:scale-95 disabled:opacity-50 sm:w-auto"
             >
-              {submitting ? "Weaving it in… 🪄" : "Let's plan ✨"}
+              {submitting ? "whimble thinking… 🫘" : "make plan ✨"}
             </button>
           )}
         </form>
