@@ -13,14 +13,14 @@ export function AgendaList({
   const sortedDates = Array.from(new Set([...tasksByDate.keys(), ...(busyBlocksByDate?.keys() ?? [])])).sort();
 
   if (sortedDates.length === 0) {
-    return <p className="font-quicksand text-sm text-clay">No tasks yet.</p>;
+    return <p className="font-fraunces text-sm text-clay">No tasks yet.</p>;
   }
 
   return (
     <div className="flex flex-col gap-4">
       {sortedDates.map((dateKey) => (
         <div key={dateKey} className="flex flex-col gap-1.5">
-          <div className="font-quicksand text-sm font-bold text-foreground">
+          <div className="text-sm font-bold text-foreground">
             {parseISODate(dateKey).toLocaleDateString(undefined, {
               weekday: "long",
               month: "short",

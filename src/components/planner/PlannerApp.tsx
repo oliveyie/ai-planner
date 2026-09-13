@@ -7,7 +7,6 @@ import { EmptyCalendarPreview } from "@/src/components/calendar/EmptyCalendarPre
 import { PlanSummaryCard } from "@/src/components/calendar/PlanSummaryCard";
 import { PushControls } from "@/src/components/calendar/PushControls";
 import { ChatComposer } from "@/src/components/chat/ChatComposer";
-import { ChatTranscript } from "@/src/components/chat/ChatTranscript";
 import { GoalEntryForm } from "@/src/components/goal/GoalEntryForm";
 import { AppHeader } from "@/src/components/layout/AppHeader";
 import { fetchCalendarEvents, pushPlanToCalendar } from "@/src/lib/calendar-api";
@@ -289,7 +288,7 @@ export function PlannerApp() {
             {showConnectModal && <ConnectCalendarScreen onSkip={handleSkipConnect} />}
           </main>
 
-          <footer className="py-2 text-center font-quicksand text-xs text-clay-light sm:text-sm">
+          <footer className="py-2 text-center font-fraunces text-xs italic text-clay-light sm:text-sm">
             Everything is flexible. You can always change your mind, reschedule, or eat snacks instead. 🍪
           </footer>
         </div>
@@ -297,19 +296,34 @@ export function PlannerApp() {
     );
   }
 
+  const latestAssistantMessage = [...messages].reverse().find((m) => m.role === "assistant");
+
   return (
     <>
-      <AppHeader connections={connections} />
+      <AppHeader connections={connections} onDisconnect={handleDisconnect} />
       <div className="w-full max-w-6xl mx-auto flex flex-col gap-5 px-4 sm:px-6 pb-16">
-        <header className="flex flex-wrap items-start justify-between gap-3 px-2 pt-2">
-          <h1 className="font-quicksand text-xl font-bold tracking-tight text-foreground">{goal.title}</h1>
-          <button
-            onClick={handleNewGoal}
-            className="font-quicksand text-sm font-semibold text-clay-light underline underline-offset-2 hover:text-clay"
-          >
-            + New Goal
-          </button>
+        <header className="px-2 pt-2">
+          <h1 className="font-fraunces text-xl font-semibold tracking-tight text-foreground">{goal.title}</h1>
         </header>
+
+        <section className="flex flex-col gap-3 rounded-3xl border border-[#EFE5D8] bg-surface-card/90 p-4 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-5">
+          <div className="flex items-center justify-between gap-3 border-b border-[#EDE2D4]/60 px-1 pb-3">
+            <div className="flex items-center gap-2">
+              <span className="font-fraunces text-sm italic text-foreground">WhimsyCal Buddy</span>
+              <span className="h-1.5 w-1.5 rounded-full bg-sage-dark" />
+            </div>
+            <button
+              onClick={handleNewGoal}
+              className="text-sm font-semibold text-clay-light underline underline-offset-2 hover:text-clay"
+            >
+              + New Goal
+            </button>
+          </div>
+          {latestAssistantMessage && (
+            <p className="whitespace-pre-wrap px-1 text-sm text-foreground">{latestAssistantMessage.content}</p>
+          )}
+          <ChatComposer onSend={handleRefine} />
+        </section>
 
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
           <div className="lg:col-span-5">
@@ -325,19 +339,6 @@ export function PlannerApp() {
             <PushControls connections={connections} onPush={handlePush} />
           </div>
         )}
-
-        <section className="flex flex-col gap-3 rounded-3xl border border-[#EFE5D8] bg-surface-card/90 p-4 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-5">
-          <div className="flex items-center gap-2 border-b border-[#EDE2D4]/60 px-1 pb-3">
-            <span className="font-quicksand text-sm font-bold text-foreground">WhimsyCal Buddy</span>
-            <span className="h-1.5 w-1.5 rounded-full bg-sage-dark" />
-          </div>
-          {messages.length > 0 && (
-            <div className="max-h-72 overflow-y-auto px-1">
-              <ChatTranscript messages={messages} />
-            </div>
-          )}
-          <ChatComposer onSend={handleRefine} />
-        </section>
       </div>
     </>
   );

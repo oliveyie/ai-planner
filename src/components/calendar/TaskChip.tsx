@@ -9,7 +9,7 @@ export function TaskChip({ task, compact = false }: { task: Task; compact?: bool
   return (
     <div
       title={task.description}
-      className={`rounded-lg border px-1.5 py-1 font-quicksand text-[11px] font-semibold leading-tight ${PLAN_TASK_CHIP_CLASS} ${
+      className={`rounded-lg border px-1.5 py-1 text-[11px] font-semibold leading-tight ${PLAN_TASK_CHIP_CLASS} ${
         conflict ? "border-dashed opacity-70" : ""
       }`}
     >

@@ -58,13 +58,13 @@ export function ChatComposer({
         <button
           type="submit"
           disabled={submitting || !message.trim()}
-          className="whitespace-nowrap rounded-full bg-coral px-5 py-2.5 font-quicksand text-sm font-bold text-white shadow-[0_4px_16px_rgba(249,124,86,0.3)] transition-all hover:bg-[#e86b45] active:scale-95 disabled:opacity-50"
+          className="whitespace-nowrap rounded-full bg-coral px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_16px_rgba(249,124,86,0.3)] transition-all hover:bg-[#e86b45] active:scale-95 disabled:opacity-50"
         >
           Send
         </button>
       </form>
-      {submitting && <p className="font-quicksand text-sm text-clay">Updating your plan…</p>}
-      {error && <p className="font-quicksand text-sm text-peach-dark">{error}</p>}
+      {submitting && <p className="text-sm text-clay">Updating your plan…</p>}
+      {error && <p className="text-sm text-peach-dark">{error}</p>}
     </div>
   );
 }

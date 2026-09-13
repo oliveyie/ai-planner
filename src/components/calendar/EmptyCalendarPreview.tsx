@@ -134,11 +134,11 @@ export function EmptyCalendarPreview({
         <div className="flex items-center gap-2">
           <button
             onClick={goToToday}
-            className="rounded-full border border-[#eee4d5] bg-white px-3.5 py-1.5 font-quicksand text-xs font-bold text-slate-700 shadow-xs transition-colors hover:bg-slate-50"
+            className="rounded-full border border-[#eee4d5] bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition-colors hover:bg-slate-50"
           >
             Today
           </button>
-          <div className="flex items-center rounded-full border border-[#eee4d5] bg-white px-3 py-1.5 font-quicksand text-sm font-bold text-slate-700 shadow-xs">
+          <div className="flex items-center rounded-full border border-[#eee4d5] bg-white px-3 py-1.5 text-sm font-bold text-slate-700 shadow-xs">
             <button
               aria-label="Previous"
               onClick={() => shift(-1)}
@@ -157,7 +157,7 @@ export function EmptyCalendarPreview({
           </div>
         </div>
 
-        <div className="flex items-center rounded-full border border-[#ede3d3] bg-[#f8f5ee] p-1 font-quicksand text-xs font-bold text-slate-400">
+        <div className="flex items-center rounded-full border border-[#ede3d3] bg-[#f8f5ee] p-1 text-xs font-bold text-slate-400">
           {VIEW_MODES.map((mode) => (
             <button
               key={mode}
@@ -185,14 +185,14 @@ export function EmptyCalendarPreview({
           </div>
         ) : (
           <div className="flex min-h-[280px] items-center justify-center rounded-2xl border-[1.5px] border-dashed border-amber-300 bg-amber-50/20 p-6">
-            <span className="font-quicksand text-sm font-semibold text-amber-500">Nothing scheduled yet</span>
+            <span className="font-fraunces text-sm font-semibold text-amber-500">Nothing scheduled yet</span>
           </div>
         )
       ) : view === "week" ? (
         <WeekView anchorDate={anchorDate} busyBlocksByDate={busyBlocksByDate} />
       ) : (
         <>
-          <div className="mb-2 grid grid-cols-7 gap-3 text-center font-quicksand text-xs font-bold uppercase tracking-wider text-slate-400">
+          <div className="mb-2 grid grid-cols-7 gap-3 text-center text-xs font-bold uppercase tracking-wider text-slate-400">
             {WEEKDAY_LABELS.map((weekdayLabel) => (
               <div key={weekdayLabel}>{weekdayLabel}</div>
             ))}

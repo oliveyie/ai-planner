@@ -79,7 +79,7 @@ export function GoalEntryForm({
       <div className="pointer-events-none absolute -bottom-16 -left-12 h-56 w-56 rounded-full bg-buttercup/50 blur-2xl" />
 
       <div className="relative z-10 flex flex-col items-center gap-4 text-center">
-        <h1 className="font-quicksand text-2xl font-bold tracking-tight text-foreground">
+        <h1 className="font-fraunces text-2xl font-semibold tracking-tight text-foreground">
           What are your goals?
         </h1>
 
@@ -99,21 +99,21 @@ export function GoalEntryForm({
           <button
             type="submit"
             disabled={submitting || !message.trim()}
-            className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-coral px-7 py-3 font-quicksand text-sm font-bold tracking-wide text-white shadow-[0_4px_16px_rgba(249,124,86,0.3)] transition-all hover:bg-[#e86b45] hover:shadow-[0_6px_20px_rgba(249,124,86,0.4)] active:scale-95 disabled:opacity-50 sm:w-auto"
+            className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-coral px-7 py-3 text-sm font-bold tracking-wide text-white shadow-[0_4px_16px_rgba(249,124,86,0.3)] transition-all hover:bg-[#e86b45] hover:shadow-[0_6px_20px_rgba(249,124,86,0.4)] active:scale-95 disabled:opacity-50 sm:w-auto"
           >
             {submitting ? "Weaving it in… 🪄" : "Let's plan ✨"}
           </button>
         </form>
 
         <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-          <span className="mr-1 font-quicksand text-xs font-bold text-clay-light">Quick sparks:</span>
+          <span className="mr-1 text-xs font-bold text-clay-light">Quick sparks:</span>
           {QUICK_SPARKS.map((spark) => (
             <button
               key={spark.label}
               type="button"
               onClick={() => setMessage(spark.seed)}
               disabled={submitting}
-              className={`rounded-full border px-3.5 py-1.5 font-quicksand text-xs font-semibold shadow-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50 ${CHIP_STYLES[spark.color]}`}
+              className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold shadow-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50 ${CHIP_STYLES[spark.color]}`}
             >
               {spark.emoji} {spark.label}
             </button>

@@ -24,7 +24,7 @@ export function MonthView({
     <div className="flex flex-col gap-2">
       <div className="grid grid-cols-7 gap-1.5 border-b border-[#EDE2D4]/70 pb-2 text-center sm:gap-2">
         {WEEKDAY_LABELS.map((label) => (
-          <span key={label} className="font-quicksand text-xs font-bold uppercase tracking-wider text-clay">
+          <span key={label} className="text-xs font-bold uppercase tracking-wider text-clay">
             {label}
           </span>
         ))}
@@ -52,13 +52,13 @@ export function MonthView({
           >
             {isToday ? (
               <div className="flex items-center justify-between">
-                <span className="font-quicksand text-[10px] font-bold uppercase text-coral">Today</span>
+                <span className="text-[10px] font-bold uppercase text-coral">Today</span>
                 <span className="flex h-5 w-5 items-center justify-center rounded-full bg-coral text-[11px] font-bold text-white">
                   {day.getDate()}
                 </span>
               </div>
             ) : (
-              <span className="font-quicksand text-xs font-bold text-foreground">{day.getDate()}</span>
+              <span className="text-xs font-bold text-foreground">{day.getDate()}</span>
             )}
             <div className="flex flex-col gap-1">
               {busyBlocks.map((block, i) => (
@@ -68,7 +68,7 @@ export function MonthView({
                 <TaskChip key={task.id} task={task} compact />
               ))}
               {overflow > 0 && (
-                <div className="font-quicksand text-[10px] font-semibold text-clay-light">+{overflow} more</div>
+                <div className="text-[10px] font-semibold text-clay-light">+{overflow} more</div>
               )}
             </div>
           </div>

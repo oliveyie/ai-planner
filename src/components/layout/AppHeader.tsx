@@ -18,7 +18,7 @@ export function AppHeader({
         <div className="w-7 h-7 rounded-full bg-buttercup flex items-center justify-center text-base ring-2 ring-buttercup-dark/20">
           🟡
         </div>
-        <span className="font-quicksand font-bold text-lg text-foreground tracking-tight">WhimsyCal</span>
+        <span className="font-fraunces font-semibold text-lg text-foreground tracking-tight">WhimsyCal</span>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -26,7 +26,7 @@ export function AppHeader({
           connections.map((connection) => (
             <span
               key={connection.provider}
-              className="flex items-center gap-1.5 rounded-full border border-sage-dark/15 bg-sage/70 py-1.5 pl-3.5 pr-2 font-quicksand text-xs font-semibold text-sage-dark"
+              className="flex items-center gap-1.5 rounded-full border border-sage-dark/15 bg-sage/70 py-1.5 pl-3.5 pr-2 text-xs font-semibold text-sage-dark"
             >
               {CONNECTION_LABELS[connection.provider]}
               {onDisconnect && (

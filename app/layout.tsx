@@ -1,16 +1,25 @@
 import type { Metadata } from "next";
-import { Plus_Jakarta_Sans, Quicksand } from "next/font/google";
+import { Fraunces, Inter } from "next/font/google";
 import "./globals.css";
 
-const plusJakartaSans = Plus_Jakarta_Sans({
-  variable: "--font-plus-jakarta-sans",
+// Two-font hierarchy: Inter (a Google Sans stand-in — the real thing isn't a
+// public web font) does essentially all UI text — nav, buttons, dates,
+// times, descriptions, forms, and calendar items (bumped to semibold/bold
+// for emphasis rather than swapping typeface). Fraunces, a serif with real
+// personality, is reserved for the app name, major headings, and empty
+// states — plus occasional italic for tiny whimsical moments — so it never
+// becomes the everyday reading font.
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
-const quicksand = Quicksand({
-  variable: "--font-quicksand",
+const fraunces = Fraunces({
+  variable: "--font-fraunces",
   subsets: ["latin"],
-  weight: ["500", "600", "700"],
+  weight: ["500", "600"],
+  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -20,10 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${plusJakartaSans.variable} ${quicksand.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${inter.variable} ${fraunces.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col selection:bg-peach selection:text-peach-dark">{children}</body>
     </html>
   );

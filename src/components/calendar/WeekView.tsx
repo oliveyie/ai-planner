@@ -80,7 +80,7 @@ export function WeekView({
     <div className="flex flex-col gap-2">
       {unscheduledTasks.length > 0 && (
         <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-dashed border-[#EDE2D4] bg-surface-low/50 p-2">
-          <span className="px-1 font-quicksand text-[11px] font-bold text-clay-light">Needs a time:</span>
+          <span className="px-1 text-[11px] font-bold text-clay-light">Needs a time:</span>
           {unscheduledTasks.map((task) => (
             <TaskChip key={task.id} task={task} compact />
           ))}
@@ -94,7 +94,7 @@ export function WeekView({
           return (
             <div
               key={toISODate(day)}
-              className={`rounded-lg py-1 text-center font-quicksand text-[11px] font-bold uppercase tracking-wide ${
+              className={`rounded-lg py-1 text-center text-[11px] font-bold uppercase tracking-wide ${
                 isToday ? "bg-buttercup/60 text-coral" : "text-clay"
               }`}
             >
@@ -110,7 +110,7 @@ export function WeekView({
             {hours.map((hour) => (
               <div
                 key={hour}
-                className="absolute right-1 -translate-y-1/2 whitespace-nowrap font-quicksand text-[10px] font-semibold text-clay-light"
+                className="absolute right-1 -translate-y-1/2 whitespace-nowrap text-[10px] font-semibold text-clay-light"
                 style={{ top: (hour - rangeStartHour) * PX_PER_HOUR }}
               >
                 {formatHourLabel(hour)}

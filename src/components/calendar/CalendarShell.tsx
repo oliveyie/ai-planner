@@ -59,11 +59,11 @@ export function CalendarShell({
     <div className="flex h-full flex-col gap-3">
       {!hideHeader && (
         <header className="flex flex-wrap items-start justify-between gap-3 px-2">
-          <h1 className="font-quicksand text-xl font-bold tracking-tight text-foreground">{goal.title}</h1>
+          <h1 className="font-fraunces text-xl font-semibold tracking-tight text-foreground">{goal.title}</h1>
           {onNewGoal && (
             <button
               onClick={onNewGoal}
-              className="font-quicksand text-sm font-semibold text-clay-light underline underline-offset-2 hover:text-clay"
+              className="text-sm font-semibold text-clay-light underline underline-offset-2 hover:text-clay"
             >
               + New Goal
             </button>
@@ -73,11 +73,11 @@ export function CalendarShell({
 
       <div className="flex h-full flex-col gap-3 rounded-3xl border border-[#EFE5D8] bg-surface-card/90 p-4 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-5">
         <div className="flex items-center justify-between gap-2 px-2">
-          <span className="font-quicksand text-sm font-bold text-foreground">
+          <span className="text-sm font-bold text-foreground">
             {connections.length > 0 ? "Compare with your Calendar" : "Your Calendar"}
           </span>
           {connections.length > 0 && (
-            <span className="rounded-full bg-sage px-2 py-0.5 font-quicksand text-[11px] font-bold text-sage-dark">
+            <span className="rounded-full bg-sage px-2 py-0.5 text-[11px] font-bold text-sage-dark">
               Live Sync
             </span>
           )}
@@ -87,7 +87,7 @@ export function CalendarShell({
           <button
             onClick={goToToday}
             disabled={view === "agenda"}
-            className="rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 font-quicksand text-xs font-bold text-clay shadow-sm transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
+            className="rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 text-xs font-bold text-clay shadow-sm transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
           >
             Today
           </button>
@@ -100,7 +100,7 @@ export function CalendarShell({
             >
               ←
             </button>
-            <span className="min-w-32 px-1 text-center font-quicksand text-sm font-bold text-foreground">
+            <span className="min-w-32 px-1 text-center text-sm font-bold text-foreground">
               {label}
             </span>
             <button
@@ -118,7 +118,7 @@ export function CalendarShell({
               <button
                 key={mode}
                 onClick={() => setView(mode)}
-                className={`rounded-full px-3 py-1 font-quicksand text-xs font-bold capitalize transition-all ${
+                className={`rounded-full px-3 py-1 text-xs font-bold capitalize transition-all ${
                   view === mode ? "bg-surface-card text-foreground shadow-sm" : "text-clay hover:text-foreground"
                 }`}
               >

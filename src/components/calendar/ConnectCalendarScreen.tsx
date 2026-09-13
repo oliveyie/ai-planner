@@ -8,7 +8,7 @@ export function ConnectCalendarScreen({ onSkip }: { onSkip: () => void }) {
   return (
     <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/40 p-4 backdrop-blur-[5px]">
       <div className="flex w-full max-w-lg flex-col items-center rounded-[2rem] border border-[#f0e3d0] bg-white/95 p-6 text-center shadow-[0_20px_48px_-10px_rgba(120,90,70,0.14)] sm:p-8">
-        <h2 className="mb-2 font-quicksand text-xl font-bold tracking-tight text-slate-800 sm:text-2xl">
+        <h2 className="mb-2 font-fraunces text-xl font-semibold tracking-tight text-slate-800 sm:text-2xl">
           Your calendar is looking a little lonely!
         </h2>
         <p className="mb-6 max-w-md text-xs font-medium leading-relaxed text-slate-600 sm:text-sm">
@@ -19,7 +19,7 @@ export function ConnectCalendarScreen({ onSkip }: { onSkip: () => void }) {
         <div className="mb-5 flex w-full max-w-sm flex-col gap-3">
           <a
             href="/api/auth/google/start"
-            className="flex w-full items-center justify-center gap-3.5 rounded-full border border-slate-200 bg-white px-5 py-3 font-quicksand text-sm font-bold text-slate-700 shadow-xs transition-all duration-200 hover:bg-slate-50 hover:shadow"
+            className="flex w-full items-center justify-center gap-3.5 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-xs transition-all duration-200 hover:bg-slate-50 hover:shadow"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path
@@ -43,7 +43,7 @@ export function ConnectCalendarScreen({ onSkip }: { onSkip: () => void }) {
           </a>
           <a
             href="/api/auth/microsoft/start"
-            className="flex w-full items-center justify-center gap-3.5 rounded-full border border-slate-200 bg-white px-5 py-3 font-quicksand text-sm font-bold text-slate-700 shadow-xs transition-all duration-200 hover:bg-slate-50 hover:shadow"
+            className="flex w-full items-center justify-center gap-3.5 rounded-full border border-slate-200 bg-white px-5 py-3 text-sm font-bold text-slate-700 shadow-xs transition-all duration-200 hover:bg-slate-50 hover:shadow"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path
@@ -65,7 +65,7 @@ export function ConnectCalendarScreen({ onSkip }: { onSkip: () => void }) {
 
         <button
           onClick={onSkip}
-          className="font-quicksand text-xs font-bold text-amber-700 underline decoration-amber-300 underline-offset-4 transition-colors hover:text-amber-800"
+          className="text-xs font-bold text-amber-700 underline decoration-amber-300 underline-offset-4 transition-colors hover:text-amber-800"
         >
           Or skip for now &amp; explore as guest →
         </button>

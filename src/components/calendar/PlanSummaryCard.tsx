@@ -46,22 +46,22 @@ export function PlanSummaryCard({ goal, plan }: { goal: Goal; plan: Plan }) {
     <div className="flex h-full flex-col justify-between gap-4 rounded-3xl border border-[#EFE5D8] bg-surface-card/95 p-5 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-6">
       <div>
         <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-coral/30 bg-peach px-2.5 py-1 font-quicksand text-xs font-bold text-peach-dark">
+          <span className="rounded-full border border-coral/30 bg-peach px-2.5 py-1 text-xs font-bold text-peach-dark">
             {currentPhase?.name ?? plan.phases[0]?.name ?? "Your Plan"}
           </span>
-          <span className="rounded-full border border-sage-dark/20 bg-sage px-2.5 py-1 font-quicksand text-xs font-bold text-sage-dark">
+          <span className="rounded-full border border-sage-dark/20 bg-sage px-2.5 py-1 text-xs font-bold text-sage-dark">
             {scheduledCount}/{activeTasks.length} Slots Set
           </span>
         </div>
 
-        <h2 className="font-quicksand text-2xl font-bold tracking-tight text-foreground">{goal.title}</h2>
+        <h2 className="font-fraunces text-2xl font-semibold tracking-tight text-foreground">{goal.title}</h2>
         <p className="mt-1 text-xs text-clay">
           {totalWeeks} week{totalWeeks === 1 ? "" : "s"} • ~{avgPerWeek} session{avgPerWeek === 1 ? "" : "s"} a week
         </p>
 
         <div className="mt-4 flex flex-col gap-3">
           {upcoming.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-[#EDE2D4] px-3.5 py-4 text-center text-xs text-clay-light">
+            <p className="rounded-2xl border border-dashed border-[#EDE2D4] px-3.5 py-4 text-center font-fraunces text-sm text-clay-light">
               Nothing left on the calendar — nice work!
             </p>
           )}
@@ -78,16 +78,16 @@ export function PlanSummaryCard({ goal, plan }: { goal: Goal; plan: Plan }) {
               >
                 <div className="mb-1.5 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-coral/10 font-quicksand text-xs font-bold text-coral">
+                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-coral/10 text-xs font-bold text-coral">
                       {dayLabel}
                     </span>
-                    <span className="font-quicksand text-sm font-bold text-foreground">{task.title}</span>
+                    <span className="text-sm font-bold text-foreground">{task.title}</span>
                   </div>
                   <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-bold ${style.chip}`}>
                     {style.label}
                   </span>
                 </div>
-                <div className="pl-9 font-quicksand text-xs font-semibold text-coral">
+                <div className="pl-9 text-xs font-semibold text-coral">
                   {task.schedulingStatus === "conflict"
                     ? "Needs a new time slot"
                     : start && end

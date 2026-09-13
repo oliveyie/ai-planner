@@ -13,7 +13,7 @@ export function BusyBlockChip({ block, compact = false }: { block: BusyBlock; co
 
   return (
     <div
-      className="rounded-lg border border-dashed border-clay-light/40 bg-surface-low/60 px-1.5 py-1 font-quicksand text-[11px] text-clay"
+      className="rounded-lg border border-dashed border-clay-light/40 bg-surface-low/60 px-1.5 py-1 text-[11px] text-clay"
       style={{ borderLeftWidth: 3, borderLeftColor: block.color, borderLeftStyle: "solid" }}
       title={block.calendarName}
     >
