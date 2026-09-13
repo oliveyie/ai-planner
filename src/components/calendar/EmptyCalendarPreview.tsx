@@ -13,6 +13,7 @@ import {
   toISODate,
 } from "@/src/lib/date-utils";
 import { groupBusyBlocksByDate } from "@/src/lib/plan-utils";
+import { CALENDAR_PROVIDER_LABELS } from "@/src/lib/provider-labels";
 import type { BusyBlock, CalendarConnection } from "@/src/lib/types";
 import { BusyBlockChip } from "./BusyBlockChip";
 import { CalendarLegend } from "./CalendarLegend";
@@ -210,6 +211,19 @@ export function EmptyCalendarPreview({
             ))}
           </div>
         </>
+      )}
+
+      {connections.length > 0 && (
+        <div className="mt-4 flex flex-wrap items-center justify-end gap-1.5">
+          {connections.map((connection) => (
+            <span
+              key={connection.provider}
+              className="rounded-full bg-sage px-2.5 py-1 text-[11px] font-bold text-sage-dark"
+            >
+              {CALENDAR_PROVIDER_LABELS[connection.provider]}
+            </span>
+          ))}
+        </div>
       )}
     </div>
   );

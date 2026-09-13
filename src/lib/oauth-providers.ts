@@ -36,9 +36,11 @@ export function getProviderConfig(provider: CalendarProvider): ProviderConfig {
       authorizeUrl: "https://accounts.google.com/o/oauth2/v2/auth",
       tokenUrl: "https://oauth2.googleapis.com/token",
       // Full access, not calendar.readonly: pushing a plan creates a
-      // dedicated calendar, which read-only access can't do. Anyone who
-      // connected before this widened needs to reconnect (SPEC.md §7).
-      scope: "https://www.googleapis.com/auth/calendar",
+      // dedicated calendar, which read-only access can't do. `openid email
+      // profile` is only for reading the user's display name (AppHeader) —
+      // never used for auth/identity. Anyone who connected before this
+      // widened needs to reconnect (SPEC.md §7).
+      scope: "https://www.googleapis.com/auth/calendar openid email profile",
       clientId: requireEnv("GOOGLE_CLIENT_ID"),
       clientSecret: requireEnv("GOOGLE_CLIENT_SECRET"),
       // Google only returns a refresh_token on first consent unless forced.
@@ -49,7 +51,8 @@ export function getProviderConfig(provider: CalendarProvider): ProviderConfig {
   return {
     authorizeUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/authorize",
     tokenUrl: "https://login.microsoftonline.com/common/oauth2/v2.0/token",
-    scope: "offline_access Calendars.ReadWrite",
+    // User.Read is only for reading the display name (AppHeader) via /me.
+    scope: "offline_access Calendars.ReadWrite User.Read",
     clientId: requireEnv("MICROSOFT_CLIENT_ID"),
     clientSecret: requireEnv("MICROSOFT_CLIENT_SECRET"),
   };
@@ -134,4 +137,29 @@ export async function refreshAccessToken(provider: CalendarProvider, refreshToke
   const result = toTokenResult(await response.json());
   // Neither provider reliably returns a new refresh_token on every refresh; keep the old one if absent.
   return { ...result, refreshToken: result.refreshToken ?? refreshToken };
+}
+
+// Best-effort only — a failure here (missing scope from a pre-widening
+// connection, a transient error) shouldn't block the connection itself, so
+// the caller just gets undefined and AppHeader falls back to "Guest".
+export async function fetchDisplayName(provider: CalendarProvider, accessToken: string): Promise<string | undefined> {
+  try {
+    if (provider === "google") {
+      const response = await fetch("https://www.googleapis.com/oauth2/v3/userinfo", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      if (!response.ok) return undefined;
+      const data = (await response.json()) as { name?: string };
+      return data.name;
+    }
+
+    const response = await fetch("https://graph.microsoft.com/v1.0/me", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.ok) return undefined;
+    const data = (await response.json()) as { displayName?: string };
+    return data.displayName;
+  } catch {
+    return undefined;
+  }
 }

@@ -73,6 +73,7 @@ export const calendarConnectionSchema = z.object({
   accessToken: z.string(),
   refreshToken: z.string().optional(),
   expiresAt: z.string(),
+  displayName: z.string().optional(),
 });
 
 export const busyBlockSchema = z.object({

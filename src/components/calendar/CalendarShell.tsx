@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { addDays, addMonths, formatMonthLabel, formatWeekRangeLabel } from "@/src/lib/date-utils";
 import { flattenTasks, groupBusyBlocksByDate, groupTasksByDate } from "@/src/lib/plan-utils";
+import { CALENDAR_PROVIDER_LABELS } from "@/src/lib/provider-labels";
 import type { BusyBlock, CalendarConnection, Goal, Plan } from "@/src/lib/types";
 import { AgendaList } from "./AgendaList";
 import { CalendarLegend } from "./CalendarLegend";
@@ -72,15 +73,10 @@ export function CalendarShell({
       )}
 
       <div className="flex h-full flex-col gap-3 rounded-3xl border border-[#EFE5D8] bg-surface-card/90 p-4 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-5">
-        <div className="flex items-center justify-between gap-2 px-2">
+        <div className="px-2">
           <span className="text-sm font-bold text-foreground">
             {connections.length > 0 ? "Compare with your Calendar" : "Your Calendar"}
           </span>
-          {connections.length > 0 && (
-            <span className="rounded-full bg-sage px-2 py-0.5 text-[11px] font-bold text-sage-dark">
-              Live Sync
-            </span>
-          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 px-2">
@@ -137,6 +133,19 @@ export function CalendarShell({
           <MonthView anchorDate={anchorDate} tasksByDate={tasksByDate} busyBlocksByDate={busyBlocksByDate} />
         )}
         {view === "agenda" && <AgendaList tasksByDate={tasksByDate} busyBlocksByDate={busyBlocksByDate} />}
+
+        {connections.length > 0 && (
+          <div className="flex flex-wrap items-center justify-end gap-1.5 px-2">
+            {connections.map((connection) => (
+              <span
+                key={connection.provider}
+                className="rounded-full bg-sage px-2 py-0.5 text-[11px] font-bold text-sage-dark"
+              >
+                {CALENDAR_PROVIDER_LABELS[connection.provider]}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,12 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { CALENDAR_PROVIDER_NAMES } from "@/src/lib/provider-labels";
 import type { CalendarConnection, CalendarProvider } from "@/src/lib/types";
-
-const PROVIDER_LABELS: Record<CalendarProvider, string> = {
-  google: "Google Calendar",
-  microsoft: "Outlook Calendar",
-};
 
 export function PushControls({
   connections,
@@ -47,13 +43,13 @@ export function PushControls({
           >
             {pushingProvider === connection.provider
               ? "Pushing…"
-              : `Push to ${PROVIDER_LABELS[connection.provider]}`}
+              : `Push to ${CALENDAR_PROVIDER_NAMES[connection.provider]}`}
           </button>
         ))}
       </div>
       {successProvider && (
         <p className="text-xs font-semibold text-sage-dark">
-          Pushed to {PROVIDER_LABELS[successProvider]}. 🌸
+          Pushed to {CALENDAR_PROVIDER_NAMES[successProvider]}. 🌸
         </p>
       )}
       {error && <p className="text-xs font-semibold text-peach-dark">{error}</p>}

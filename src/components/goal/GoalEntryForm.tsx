@@ -2,40 +2,6 @@
 
 import { useState, type FormEvent, type KeyboardEvent } from "react";
 
-const QUICK_SPARKS = [
-  {
-    emoji: "🏃",
-    label: "5k without wheezing",
-    seed: "Run a 5k without dying or wheezing, 3 gentle intervals a week",
-    color: "peach" as const,
-  },
-  {
-    emoji: "📚",
-    label: "Actually finish a book",
-    seed: "Actually finish a book before buying 5 more, 15 mins every evening",
-    color: "buttercup" as const,
-  },
-  {
-    emoji: "🚀",
-    label: "Ship a side project",
-    seed: "Ship a small side project, working on it a little each weekend",
-    color: "sage" as const,
-  },
-  {
-    emoji: "🥐",
-    label: "Master French pastries",
-    seed: "Master French pastries and bake croissants without burning the house down",
-    color: "lavender" as const,
-  },
-];
-
-const CHIP_STYLES = {
-  peach: "bg-peach/70 hover:bg-peach text-peach-dark border-peach-dark/10",
-  buttercup: "bg-buttercup/80 hover:bg-buttercup text-buttercup-dark border-buttercup-dark/15",
-  sage: "bg-sage/80 hover:bg-sage text-sage-dark border-sage-dark/15",
-  lavender: "bg-lavender/80 hover:bg-lavender text-lavender-dark border-lavender-dark/15",
-};
-
 export function GoalEntryForm({
   onSubmit,
 }: {
@@ -74,7 +40,7 @@ export function GoalEntryForm({
   }
 
   return (
-    <div className="relative mx-auto max-w-2xl overflow-hidden rounded-3xl border border-[#F1E8DC] bg-surface-card p-5 shadow-[0_8px_30px_rgba(215,190,170,0.14)] sm:p-8">
+    <div className="relative mx-auto w-full max-w-4xl overflow-hidden rounded-3xl border border-[#F1E8DC] bg-surface-card p-5 shadow-[0_8px_30px_rgba(215,190,170,0.14)] sm:p-8">
       <div className="pointer-events-none absolute -top-12 -right-12 h-48 w-48 rounded-full bg-peach/40 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-16 -left-12 h-56 w-56 rounded-full bg-buttercup/50 blur-2xl" />
 
@@ -93,32 +59,19 @@ export function GoalEntryForm({
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="e.g., Run a 5k without wheezing, bake sourdough like a pro…"
+            placeholder="Tell me your whim…"
             disabled={submitting}
           />
-          <button
-            type="submit"
-            disabled={submitting || !message.trim()}
-            className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-coral px-7 py-3 text-sm font-bold tracking-wide text-white shadow-[0_4px_16px_rgba(249,124,86,0.3)] transition-all hover:bg-[#e86b45] hover:shadow-[0_6px_20px_rgba(249,124,86,0.4)] active:scale-95 disabled:opacity-50 sm:w-auto"
-          >
-            {submitting ? "Weaving it in… 🪄" : "Let's plan ✨"}
-          </button>
-        </form>
-
-        <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-          <span className="mr-1 text-xs font-bold text-clay-light">Quick sparks:</span>
-          {QUICK_SPARKS.map((spark) => (
+          {message.trim() && (
             <button
-              key={spark.label}
-              type="button"
-              onClick={() => setMessage(spark.seed)}
+              type="submit"
               disabled={submitting}
-              className={`rounded-full border px-3.5 py-1.5 text-xs font-semibold shadow-sm transition-all hover:scale-105 active:scale-95 disabled:opacity-50 ${CHIP_STYLES[spark.color]}`}
+              className="flex w-full items-center justify-center gap-2 whitespace-nowrap rounded-full bg-coral px-7 py-3 text-sm font-bold tracking-wide text-white shadow-[0_4px_16px_rgba(249,124,86,0.3)] transition-all hover:bg-[#e86b45] hover:shadow-[0_6px_20px_rgba(249,124,86,0.4)] active:scale-95 disabled:opacity-50 sm:w-auto"
             >
-              {spark.emoji} {spark.label}
+              {submitting ? "Weaving it in… 🪄" : "Let's plan ✨"}
             </button>
-          ))}
-        </div>
+          )}
+        </form>
 
         {error && <p className="text-sm text-peach-dark">{error}</p>}
       </div>

@@ -59,6 +59,7 @@ function parseOAuthFragment(): CalendarConnection | null {
     accessToken,
     expiresAt,
     refreshToken: params.get("refresh_token") ?? undefined,
+    displayName: params.get("display_name") ?? undefined,
     connectedAt: new Date().toISOString(),
   };
 }
@@ -287,10 +288,6 @@ export function PlannerApp() {
             <EmptyCalendarPreview dimmed={showConnectModal} connections={connections} />
             {showConnectModal && <ConnectCalendarScreen onSkip={handleSkipConnect} />}
           </main>
-
-          <footer className="py-2 text-center font-fraunces text-xs italic text-clay-light sm:text-sm">
-            Everything is flexible. You can always change your mind, reschedule, or eat snacks instead. 🍪
-          </footer>
         </div>
       </>
     );

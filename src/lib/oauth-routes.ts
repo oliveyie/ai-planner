@@ -6,6 +6,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import {
   buildAuthorizeUrl,
   exchangeCodeForTokens,
+  fetchDisplayName,
   getAppBaseUrl,
   refreshAccessToken,
 } from "./oauth-providers";
@@ -51,11 +52,13 @@ export function createCallbackHandler(provider: CalendarProvider) {
 
     try {
       const tokens = await exchangeCodeForTokens(provider, code);
+      const displayName = await fetchDisplayName(provider, tokens.accessToken);
       const fragment = new URLSearchParams({
         calendar_connected: provider,
         access_token: tokens.accessToken,
         expires_at: tokens.expiresAt,
         ...(tokens.refreshToken ? { refresh_token: tokens.refreshToken } : {}),
+        ...(displayName ? { display_name: displayName } : {}),
       });
       const response = NextResponse.redirect(`${getAppBaseUrl()}/#${fragment.toString()}`);
       response.cookies.delete(cookieName);

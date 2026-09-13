@@ -75,6 +75,7 @@ export type CalendarConnection = {
   accessToken: string;
   refreshToken?: string;
   expiresAt: string; // ISO datetime; past this, accessToken must be refreshed before use.
+  displayName?: string; // from the provider's profile endpoint; absent for connections made before this field existed
 };
 
 export type BusyBlock = {
