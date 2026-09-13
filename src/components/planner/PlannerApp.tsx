@@ -13,6 +13,7 @@ import { AppHeader } from "@/src/components/layout/AppHeader";
 import { fetchCalendarEvents, pushPlanToCalendar } from "@/src/lib/calendar-api";
 import { addDays, parseISODate } from "@/src/lib/date-utils";
 import {
+  deleteCalendarConnection,
   getActiveGoal,
   getAllCalendarConnections,
   getChatMessages,
@@ -120,6 +121,15 @@ export function PlannerApp() {
   function handleSkipConnect() {
     localStorage.setItem(SKIP_STORAGE_KEY, "1");
     setSkippedConnect(true);
+  }
+
+  async function handleDisconnect(provider: CalendarProvider) {
+    await deleteCalendarConnection(provider);
+    setConnections((prev) => prev.filter((c) => c.provider !== provider));
+    // Drop that provider's events immediately rather than waiting for the
+    // next fetch — calendar-api.ts would exclude them anyway (no connection
+    // to read with), but the stale chips would otherwise linger on screen.
+    setBusyBlocks((prev) => prev.filter((b) => b.source !== provider));
   }
 
   async function handleCreateGoal(title: string) {
@@ -266,7 +276,7 @@ export function PlannerApp() {
 
     return (
       <>
-        <AppHeader connections={connections} />
+        <AppHeader connections={connections} onDisconnect={handleDisconnect} />
         <div className="mx-auto flex w-full max-w-[1180px] flex-col gap-6 px-4 pb-10 sm:px-6">
           {connectError && (
             <p className="text-center text-sm text-peach-dark">Calendar connection failed: {connectError}</p>

@@ -5,7 +5,13 @@ const CONNECTION_LABELS: Record<CalendarProvider, string> = {
   microsoft: "📅 Outlook connected",
 };
 
-export function AppHeader({ connections = [] }: { connections?: CalendarConnection[] }) {
+export function AppHeader({
+  connections = [],
+  onDisconnect,
+}: {
+  connections?: CalendarConnection[];
+  onDisconnect?: (provider: CalendarProvider) => void;
+}) {
   return (
     <header className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-5">
       <div className="flex items-center gap-2.5 rounded-full border border-peach-dark/10 bg-surface-card px-3.5 py-1.5 shadow-sm">
@@ -20,9 +26,19 @@ export function AppHeader({ connections = [] }: { connections?: CalendarConnecti
           connections.map((connection) => (
             <span
               key={connection.provider}
-              className="flex items-center gap-1.5 rounded-full border border-sage-dark/15 bg-sage/70 px-3.5 py-1.5 font-quicksand text-xs font-semibold text-sage-dark"
+              className="flex items-center gap-1.5 rounded-full border border-sage-dark/15 bg-sage/70 py-1.5 pl-3.5 pr-2 font-quicksand text-xs font-semibold text-sage-dark"
             >
               {CONNECTION_LABELS[connection.provider]}
+              {onDisconnect && (
+                <button
+                  onClick={() => onDisconnect(connection.provider)}
+                  title={`Disconnect ${connection.provider === "google" ? "Google" : "Outlook"} Calendar`}
+                  aria-label={`Disconnect ${connection.provider === "google" ? "Google" : "Outlook"} Calendar`}
+                  className="flex h-4 w-4 items-center justify-center rounded-full text-sage-dark/70 transition-colors hover:bg-sage-dark/15 hover:text-sage-dark"
+                >
+                  ×
+                </button>
+              )}
             </span>
           ))
         ) : (
