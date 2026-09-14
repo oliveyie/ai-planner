@@ -19,7 +19,7 @@ import {
 } from "../schemas/llm-schemas";
 import { scheduleTasks } from "../calendar/scheduler";
 import type { BusyBlock, Goal, Phase, Plan, Task, Week } from "../utils/types";
-import { WHIMBLE_VOICE_GUIDE } from "./whimble-voice";
+import {GENERATE_SYSTEM_PROMPT, REFINE_SYSTEM_PROMPT, CRITIQUE_SYSTEM_PROMPT} from "./prompts"
 
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
@@ -75,24 +75,6 @@ async function callStructured<T>(
   throw new Error(`${jsonSchemaName}: unreachable`);
 }
 
-// Shared between the initial generation prompt and the refine prompt, so the
-// two paths can never drift on things like date-range rules.
-const PLAN_RULES = `Rules:
-- All dates are ISO strings, "YYYY-MM-DD".
-- Honor every constraint listed, exactly.
-- If the goal did not specify a target date, estimate a reasonable one from context (typical timelines for this kind of goal) and put it in "targetDate". If the goal did specify one, set "targetDate" to null.
-- Date consistency is a hard requirement, not a suggestion: every phase's startDate/endDate and every task's preferredDate MUST fall between the goal's startDate and your chosen targetDate (inclusive), with no exceptions. Before responding, check this yourself: does your last phase's endDate line up with targetDate, and does every date you wrote actually fall inside that span? If your "summary" states a duration (e.g. "3 months"), the actual dates you produce must match that duration — don't let phases drift past what you just said the timeline was.
-- Record anything you had to assume due to missing information (target date, experience level, availability, etc.) in "assumptions", each phrased as an invitation for the user to correct it rather than a caveat — e.g. "guessed beginner level. wrong? tell whimble."
-- Use the "type" field on each task appropriately: "task" for a normal concrete activity, "milestone" for a fixed checkpoint/deadline, "review" for a periodic check-in, "rest" for a deliberate break.
-- Only set "preferredDaysOfWeek" on a task when a constraint specifically restricts which days it can happen on.
-- "summary" and every entry in "assumptions" are spoken by Whimble, the app's mascot, and must be written in his voice: ${WHIMBLE_VOICE_GUIDE}
-- Everything else — task titles, descriptions, phase names, week focuses, dates — stays in plain, clear English. Whimble's voice is only for "summary" and "assumptions".`;
-
-const GENERATE_SYSTEM_PROMPT = `You are a planning assistant. Given a high-level goal, produce a phased, dated plan broken into concrete tasks that could be placed on a calendar.
-
-The goal can be about anything: fitness, a creative or technical project, learning a skill, career, or something else entirely. Do not assume it is fitness-related unless the goal itself implies that. Choose phase names, week focuses, and task titles appropriate to this specific goal — for example, "Research"/"Prototype"/"Polish" for a project, "Fundamentals"/"Practice"/"Refinement" for a skill, or training-specific phases for a fitness goal. Never reuse fitness vocabulary for a non-fitness goal.
-
-${PLAN_RULES}`;
 
 function buildGenerateMessages(goal: GoalInput): ChatMessage[] {
   return [
@@ -109,11 +91,6 @@ function buildGenerateMessages(goal: GoalInput): ChatMessage[] {
   ];
 }
 
-const REFINE_SYSTEM_PROMPT = `You are updating an existing plan based on new feedback from the user, for the same goal as before (never assume it's fitness-related unless it actually is).
-
-You will receive the goal, the full ordered list of constraints the user has given so far (including the newest one), and the current plan. Produce an updated plan that satisfies every constraint while changing as little else as possible — keep phase names, structure, and any unaffected tasks the same where the new constraint doesn't require touching them.
-
-${PLAN_RULES}`;
 
 function buildRefineMessages(goal: GoalInput, currentPlan: LlmPlan): ChatMessage[] {
   return [
@@ -161,18 +138,6 @@ function findDateRangeViolations(plan: LlmPlan, startDate: string, targetDate: s
 
   return violations;
 }
-
-const CRITIQUE_SYSTEM_PROMPT = `You are reviewing a generated plan for quality before it is shown to the user. Check, in this order:
-
-1. Date-range correctness — a hard requirement, not a judgment call. The user message includes "programmaticallyDetectedDateIssues": a list computed in code, not by you. If it is non-empty, you MUST set approved: false and return a revisedPlan that fixes every single listed issue (adjust phase/week/task dates so everything fits within the goal's actual startDate..targetDate span — compress or restructure phases as needed), even if nothing else about the plan is wrong. Do not second-guess or ignore this list; it is ground truth.
-2. Internal consistency — does the plan's own prose (summary, assumptions) match the actual dates used? (e.g. don't say "3 months" if the phases actually span a year.)
-3. Does the phase/week/task structure genuinely fit this specific goal, rather than reading like a generic or fitness-flavored template applied to a non-fitness goal?
-4. Are task durations and cadence reasonable for this kind of goal?
-5. Were all of the goal's constraints actually honored?
-6. Are "summary" and every entry in "assumptions" written in Whimble's voice? ${WHIMBLE_VOICE_GUIDE} If either reads like a generic corporate assistant instead, that alone is a reason to revise (rewrite them in revisedPlan, keeping everything else the same).
-
-If everything looks right (including an empty programmaticallyDetectedDateIssues list), respond with approved: true, empty notes, and revisedPlan: null.
-Otherwise respond with approved: false, a brief explanation in notes, and a corrected full plan in revisedPlan that fixes every issue found (same schema as the draft plan).`;
 
 function buildCritiqueMessages(
   goal: GoalInput,
