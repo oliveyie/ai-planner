@@ -63,6 +63,15 @@ export function formatMonthLabel(date: Date): string {
   return date.toLocaleDateString(undefined, { month: "long", year: "numeric" });
 }
 
+// For a plan phase's date range, e.g. "1 Week: Sep 14, 2026 - Sep 21, 2026" —
+// startDate/endDate are the phase's own ISO dates, weekCount its week count.
+export function formatPhaseDateRange(startDate: string, endDate: string, weekCount: number): string {
+  const start = parseISODate(startDate);
+  const end = parseISODate(endDate);
+  const opts: Intl.DateTimeFormatOptions = { month: "short", day: "numeric", year: "numeric" };
+  return `${weekCount} Week${weekCount === 1 ? "" : "s"}: ${start.toLocaleDateString(undefined, opts)} - ${end.toLocaleDateString(undefined, opts)}`;
+}
+
 export function formatWeekRangeLabel(anchor: Date): string {
   const start = startOfWeek(anchor);
   const end = addDays(start, 6);

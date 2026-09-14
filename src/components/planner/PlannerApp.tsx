@@ -249,6 +249,11 @@ export function PlannerApp() {
     setBusyBlocks([]);
   }
 
+  async function handleUpdatePlan(updatedPlan: Plan) {
+    await savePlan(updatedPlan);
+    setPlan(updatedPlan);
+  }
+
   async function handlePush(provider: CalendarProvider) {
     if (!goal || !plan) return;
 
@@ -327,7 +332,7 @@ export function PlannerApp() {
 
         <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
           <div className="lg:col-span-5">
-            <PlanSummaryCard goal={goal} plan={plan} />
+            <PlanSummaryCard goal={goal} plan={plan} onUpdatePlan={handleUpdatePlan} />
           </div>
           <div className="lg:col-span-7">
             <CalendarShell

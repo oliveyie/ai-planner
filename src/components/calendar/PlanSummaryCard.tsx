@@ -1,7 +1,10 @@
-import { formatTimeLabel, parseISODate, parseISODateTime, toISODate } from "@/src/lib/utils/date-utils";
-import { flattenTasks } from "@/src/lib/utils/plan-utils";
-import { TASK_TYPE_STYLES } from "@/src/lib/utils/task-colors";
+"use client";
+
+import { useState } from "react";
+import { formatPhaseDateRange, toISODate } from "@/src/lib/utils/date-utils";
+import { flattenTasks, mapPlanTasks, removeTaskFromPlan } from "@/src/lib/utils/plan-utils";
 import type { Goal, Plan, Task } from "@/src/lib/utils/types";
+import { EditableTaskRow } from "./EditableTaskRow";
 
 const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
@@ -10,11 +13,21 @@ function taskSortKey(task: Task): string {
 }
 
 // Ported from the Stitch "Cheeky Plan Draft & Calendar Split View" screen —
-// the left-hand "My Plan" card. Unlike the mockup's three hardcoded routine
-// cards, this reads real plan data: it shows the next handful of upcoming
-// tasks (not just one week), and a real scheduled/total ratio rather than a
-// fixed "3/3 Slots Set".
-export function PlanSummaryCard({ goal, plan }: { goal: Goal; plan: Plan }) {
+// the left-hand "My Plan" card. Tasks are grouped under their own phase
+// (rather than a separate flat "steps" bullet list plus a separate flat
+// "upcoming tasks" list, which is what this used to do) and are directly
+// editable via EditableTaskRow — onUpdatePlan persists every edit/delete as
+// a plain local change to the current plan, not an LLM regeneration.
+export function PlanSummaryCard({
+  goal,
+  plan,
+  onUpdatePlan,
+}: {
+  goal: Goal;
+  plan: Plan;
+  onUpdatePlan: (plan: Plan) => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
   const allTasks = flattenTasks(plan);
   const activeTasks = allTasks.filter((t) => t.type !== "rest");
   const scheduledCount = activeTasks.filter((t) => t.schedulingStatus === "scheduled").length;
@@ -23,13 +36,6 @@ export function PlanSummaryCard({ goal, plan }: { goal: Goal; plan: Plan }) {
   const avgPerWeek = totalWeeks > 0 ? Math.max(1, Math.round(activeTasks.length / totalWeeks)) : activeTasks.length;
 
   const todayKey = toISODate(new Date());
-  const upcoming = activeTasks
-    .filter((t) => {
-      const key = t.scheduledStart ? toISODate(parseISODateTime(t.scheduledStart)) : t.preferredDate;
-      return key >= todayKey;
-    })
-    .sort((a, b) => taskSortKey(a).localeCompare(taskSortKey(b)))
-    .slice(0, 6);
 
   const restDayNames = Array.from(
     new Set(
@@ -42,8 +48,16 @@ export function PlanSummaryCard({ goal, plan }: { goal: Goal; plan: Plan }) {
 
   const currentPhase = plan.phases.find((phase) => phase.startDate <= todayKey && phase.endDate >= todayKey);
 
-  return (
-    <div className="flex h-full flex-col justify-between gap-4 rounded-3xl border border-[#EFE5D8] bg-surface-card/95 p-5 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-6">
+  function handleSaveTask(updatedTask: Task) {
+    onUpdatePlan(mapPlanTasks(plan, new Map([[updatedTask.id, updatedTask]])));
+  }
+
+  function handleDeleteTask(taskId: string) {
+    onUpdatePlan(removeTaskFromPlan(plan, taskId));
+  }
+
+  const content = (
+    <>
       <div>
         <div className="mb-3 flex flex-wrap items-center gap-2">
           <span className="rounded-full border border-coral/30 bg-peach px-2.5 py-1 text-xs font-bold text-peach-dark">
@@ -59,59 +73,40 @@ export function PlanSummaryCard({ goal, plan }: { goal: Goal; plan: Plan }) {
           {totalWeeks} week{totalWeeks === 1 ? "" : "s"} • ~{avgPerWeek} session{avgPerWeek === 1 ? "" : "s"} a week
         </p>
 
-        <div className="mt-3 flex flex-col gap-1.5 text-xs text-clay">
-          <p>{plan.summary}</p>
-          <div>
-            <span className="font-semibold text-clay-light">steps:</span>
-            <ul className="mt-0.5 flex flex-col gap-0.5">
-              {plan.phases.map((phase) => {
-                const weekCount = phase.weeks.length;
-                return (
-                  <li key={phase.id}>
-                    - {phase.name} ({phase.startDate} to {phase.endDate}, {weekCount} week{weekCount === 1 ? "" : "s"})
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </div>
+        <p className="mt-3 text-sm font-medium text-foreground">{plan.summary}</p>
 
-        <div className="mt-4 flex flex-col gap-3">
-          {upcoming.length === 0 && (
+        <div className="mt-4 flex flex-col gap-5">
+          {activeTasks.length === 0 && (
             <p className="rounded-2xl border border-dashed border-[#EDE2D4] px-3.5 py-4 text-center font-fraunces text-sm text-clay-light">
               all done. nice work.
             </p>
           )}
-          {upcoming.map((task) => {
-            const start = task.scheduledStart ? parseISODateTime(task.scheduledStart) : null;
-            const end = task.scheduledEnd ? parseISODateTime(task.scheduledEnd) : null;
-            const dayLabel = start ? WEEKDAY_SHORT[start.getDay()] : WEEKDAY_SHORT[parseISODate(task.preferredDate).getDay()];
-            const style = TASK_TYPE_STYLES[task.type];
+          {plan.phases.map((phase) => {
+            const phaseTasks = phase.weeks
+              .flatMap((week) => week.tasks)
+              .filter((t) => t.type !== "rest")
+              .sort((a, b) => taskSortKey(a).localeCompare(taskSortKey(b)));
+
+            if (phaseTasks.length === 0) return null;
 
             return (
-              <div
-                key={task.id}
-                className="rounded-2xl border border-[#EDE2D4] bg-surface-low/60 p-3.5 transition-colors hover:border-coral/40"
-              >
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="flex h-7 w-7 items-center justify-center rounded-xl bg-coral/10 text-xs font-bold text-coral">
-                      {dayLabel}
-                    </span>
-                    <span className="text-sm font-bold text-foreground">{task.title}</span>
-                  </div>
-                  <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-bold ${style.chip}`}>
-                    {style.label}
+              <div key={phase.id} className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-0.5">
+                  <h3 className="text-sm font-bold text-foreground">{phase.name}</h3>
+                  <span className="text-xs text-clay-light">
+                    {formatPhaseDateRange(phase.startDate, phase.endDate, phase.weeks.length)}
                   </span>
                 </div>
-                <div className="pl-9 text-xs font-semibold text-coral">
-                  {task.schedulingStatus === "conflict"
-                    ? "needs new time"
-                    : start && end
-                      ? `${formatTimeLabel(start)} – ${formatTimeLabel(end)}`
-                      : "not scheduled"}
+                <div className="flex flex-col gap-2">
+                  {phaseTasks.map((task) => (
+                    // Stops the click from bubbling up to the card's own
+                    // expand-on-click handler — a task click should edit
+                    // that task, not also pop the whole card open.
+                    <div key={task.id} onClick={(e) => e.stopPropagation()}>
+                      <EditableTaskRow task={task} onSave={handleSaveTask} onDelete={handleDeleteTask} />
+                    </div>
+                  ))}
                 </div>
-                {task.description && <p className="mt-1 pl-9 text-xs text-clay-light">{task.description}</p>}
               </div>
             );
           })}
@@ -128,6 +123,43 @@ export function PlanSummaryCard({ goal, plan }: { goal: Goal; plan: Plan }) {
           <span>plenty of rest built in between.</span>
         )}
       </div>
-    </div>
+    </>
+  );
+
+  return (
+    <>
+      <div
+        onClick={() => setExpanded(true)}
+        className="flex h-full cursor-pointer flex-col justify-between gap-4 rounded-3xl border border-[#EFE5D8] bg-surface-card/95 p-5 shadow-[0_6px_24px_rgba(215,190,170,0.06)] transition-shadow hover:shadow-[0_10px_32px_rgba(215,190,170,0.14)] sm:p-6"
+      >
+        {content}
+      </div>
+
+      {expanded && (
+        <div
+          onClick={() => setExpanded(false)}
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#1c1c18]/40 p-4 backdrop-blur-sm sm:p-8"
+        >
+          {/* max-height + its own scroll live on this outer box (not the
+              flex/backdrop wrapper) — centering a flex item in a scrolling
+              container can otherwise clip its start, and the close button
+              needs to stay put rather than scrolling away with the content. */}
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative flex max-h-[85vh] w-full max-w-2xl flex-col rounded-3xl border border-[#EFE5D8] bg-surface-card shadow-2xl"
+          >
+            <button
+              type="button"
+              onClick={() => setExpanded(false)}
+              aria-label="Close"
+              className="absolute right-4 top-4 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-surface-card text-clay-light shadow-sm transition-colors hover:bg-surface-low hover:text-foreground"
+            >
+              ×
+            </button>
+            <div className="flex flex-col gap-4 overflow-y-auto p-6 sm:p-8">{content}</div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

@@ -39,6 +39,22 @@ export function mapPlanTasks(plan: Plan, updates: Map<string, Task>): Plan {
   };
 }
 
+// Sibling to mapPlanTasks: same immutable phases→weeks→tasks rebuild, but
+// removes the task instead of replacing it — used by the plan card's manual
+// task deletion (a local edit, not an LLM regeneration).
+export function removeTaskFromPlan(plan: Plan, taskId: string): Plan {
+  return {
+    ...plan,
+    phases: plan.phases.map((phase) => ({
+      ...phase,
+      weeks: phase.weeks.map((week) => ({
+        ...week,
+        tasks: week.tasks.filter((task) => task.id !== taskId),
+      })),
+    })),
+  };
+}
+
 export function taskDateKey(task: Task): string {
   if (task.scheduledStart) {
     return toISODate(parseISODateTime(task.scheduledStart));
