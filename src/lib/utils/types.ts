@@ -64,6 +64,13 @@ export type Task = {
   scheduledEnd?: string; // ISO datetime
   schedulingStatus: SchedulingStatus;
 
+  // Manual display-order override for the plan card's task list, set only by
+  // dragging to reorder there (PlannerApp.handleTaskDragEnd) — deliberately
+  // independent of scheduledStart/preferredDate, so reordering the list never
+  // touches a task's actual time. Absent until a task in its phase has been
+  // manually reordered at least once; see plan-utils.ts's taskSortKey.
+  order?: number;
+
   syncedEventId?: string;
   syncedProvider?: "google" | "microsoft";
 };

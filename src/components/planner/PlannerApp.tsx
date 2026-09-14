@@ -1,5 +1,6 @@
 "use client";
 
+import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { useEffect, useRef, useState } from "react";
 import { CalendarShell } from "@/src/components/calendar/CalendarShell";
 import { ConnectCalendarScreen } from "@/src/components/calendar/ConnectCalendarScreen";
@@ -11,7 +12,7 @@ import { AppHeader } from "@/src/components/layout/AppHeader";
 import { TypewriterText } from "@/src/components/whimble/TypewriterText";
 import { WhimbleMascot } from "@/src/components/whimble/WhimbleMascot";
 import { fetchCalendarEvents, pushPlanToCalendar } from "@/src/lib/calendar/calendar-api";
-import { addDays, parseISODate } from "@/src/lib/utils/date-utils";
+import { addDays, parseISODate, parseISODateTime, toISODateTime } from "@/src/lib/utils/date-utils";
 import {
   deleteCalendarConnection,
   getActiveGoal,
@@ -24,7 +25,7 @@ import {
   savePlan,
 } from "@/src/lib/db/db";
 import { makeId } from "@/src/lib/utils/ids";
-import { buildPlanChatMessage } from "@/src/lib/utils/plan-utils";
+import { buildPlanChatMessage, flattenTasks, mapPlanTasks, taskSortKey } from "@/src/lib/utils/plan-utils";
 import type {
   BusyBlock,
   CalendarConnection,
@@ -32,6 +33,7 @@ import type {
   ChatMessage,
   Goal,
   Plan,
+  Task,
 } from "@/src/lib/utils/types";
 
 const SKIP_STORAGE_KEY = "whimble:calendarConnectSkipped";
@@ -75,6 +77,9 @@ export function PlannerApp() {
   const [connectError, setConnectError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const initialized = useRef(false);
+  // 8px activation distance so a plain click (open a task's edit mode) still
+  // works — dnd-kit only treats it as a drag once the pointer actually moves.
+  const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
   useEffect(() => {
     // Ref guard, not a cancelled-flag/cleanup pair — see git history on
@@ -254,6 +259,101 @@ export function PlannerApp() {
     setPlan(updatedPlan);
   }
 
+  // Drag-and-drop for tasks (Pass 2): dropping a task onto a calendar day
+  // column retargets its date/time from the drop position. Dropping it onto
+  // another task row reorders the list *without* touching either task's
+  // date/time — an earlier version swapped their scheduled times instead,
+  // which the user found confusing ("reordering shouldn't change the time or
+  // date"), so this now uses Task.order (see plan-utils.ts's taskSortKey)
+  // purely for display order in the plan card, decoupled from real
+  // scheduling. Scoped to reordering within a single phase, matching how the
+  // plan card groups its list; a cross-phase drop is ignored.
+  function handleTaskDragEnd(event: DragEndEvent) {
+    if (!plan) return;
+    const { active, over } = event;
+    if (!over) return;
+
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    if (activeId === overId) return;
+
+    const allTasks = flattenTasks(plan);
+    const draggedTask = allTasks.find((t) => t.id === activeId);
+    if (!draggedTask) return;
+
+    if (overId.startsWith("daycol:")) {
+      const dropData = over.data.current as
+        | { date: string; rangeStartMinutes: number; pxPerMinute: number }
+        | undefined;
+      const activeRect = active.rect.current.translated;
+      if (!dropData || !activeRect) return;
+
+      const offsetY = activeRect.top - over.rect.top;
+      const rawMinutes = dropData.rangeStartMinutes + offsetY / dropData.pxPerMinute;
+      const snappedMinutes = Math.max(0, Math.round(rawMinutes / 15) * 15); // snap to a quarter hour
+      const startTime = `${String(Math.floor(snappedMinutes / 60)).padStart(2, "0")}:${String(snappedMinutes % 60).padStart(2, "0")}`;
+
+      const durationMinutes =
+        draggedTask.scheduledStart && draggedTask.scheduledEnd
+          ? (parseISODateTime(draggedTask.scheduledEnd).getTime() -
+              parseISODateTime(draggedTask.scheduledStart).getTime()) /
+            60_000
+          : (draggedTask.durationMinutes ?? 30);
+
+      const newStart = parseISODateTime(`${dropData.date}T${startTime}`);
+      const newEnd = new Date(newStart.getTime() + durationMinutes * 60_000);
+
+      handleUpdatePlan(
+        mapPlanTasks(
+          plan,
+          new Map([
+            [
+              draggedTask.id,
+              {
+                ...draggedTask,
+                preferredDate: dropData.date,
+                scheduledStart: toISODateTime(newStart),
+                scheduledEnd: toISODateTime(newEnd),
+                schedulingStatus: "scheduled" as const,
+              },
+            ],
+          ]),
+        ),
+      );
+      return;
+    }
+
+    const targetTask = allTasks.find((t) => t.id === overId);
+    if (!targetTask) return;
+
+    const phase = plan.phases.find((p) => p.weeks.some((w) => w.tasks.some((t) => t.id === draggedTask.id)));
+    const targetInSamePhase = phase?.weeks.some((w) => w.tasks.some((t) => t.id === targetTask.id));
+    if (!phase || !targetInSamePhase) return; // cross-phase reordering isn't supported yet
+
+    // Rebuild this phase's currently-*displayed* task order (respecting any
+    // existing manual order, else falling back to scheduled time — same rule
+    // PlanSummaryCard uses to render), move the dragged task to the target's
+    // position within that list, then persist the result as explicit order
+    // numbers. Real dates/times are untouched.
+    const phaseTasks = phase.weeks
+      .flatMap((w) => w.tasks)
+      .filter((t) => t.type !== "rest")
+      .sort((a, b) => taskSortKey(a).localeCompare(taskSortKey(b)));
+
+    const fromIndex = phaseTasks.findIndex((t) => t.id === draggedTask.id);
+    const toIndex = phaseTasks.findIndex((t) => t.id === targetTask.id);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const reordered = [...phaseTasks];
+    const [moved] = reordered.splice(fromIndex, 1);
+    reordered.splice(toIndex, 0, moved);
+
+    const updates = new Map<string, Task>();
+    reordered.forEach((t, index) => updates.set(t.id, { ...t, order: index }));
+
+    handleUpdatePlan(mapPlanTasks(plan, updates));
+  }
+
   async function handlePush(provider: CalendarProvider) {
     if (!goal || !plan) return;
 
@@ -330,21 +430,23 @@ export function PlannerApp() {
           <ChatComposer onSend={handleRefine} />
         </section>
 
-        <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
-          <div className="lg:col-span-5">
-            <PlanSummaryCard goal={goal} plan={plan} onUpdatePlan={handleUpdatePlan} />
+        <DndContext sensors={dndSensors} onDragEnd={handleTaskDragEnd}>
+          <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
+            <div className="lg:col-span-5">
+              <PlanSummaryCard goal={goal} plan={plan} onUpdatePlan={handleUpdatePlan} />
+            </div>
+            <div className="lg:col-span-7">
+              <CalendarShell
+                goal={goal}
+                plan={plan}
+                busyBlocks={busyBlocks}
+                connections={connections}
+                onPush={handlePush}
+                hideHeader
+              />
+            </div>
           </div>
-          <div className="lg:col-span-7">
-            <CalendarShell
-              goal={goal}
-              plan={plan}
-              busyBlocks={busyBlocks}
-              connections={connections}
-              onPush={handlePush}
-              hideHeader
-            />
-          </div>
-        </div>
+        </DndContext>
       </div>
     </>
   );

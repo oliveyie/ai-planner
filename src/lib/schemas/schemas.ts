@@ -23,6 +23,8 @@ export const taskSchema = z.object({
   scheduledEnd: z.string().optional(),
   schedulingStatus: schedulingStatusSchema,
 
+  order: z.number().optional(),
+
   syncedEventId: z.string().optional(),
   syncedProvider: z.enum(["google", "microsoft"]).optional(),
 });

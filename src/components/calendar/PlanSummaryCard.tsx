@@ -2,15 +2,11 @@
 
 import { useState } from "react";
 import { formatPhaseDateRange, toISODate } from "@/src/lib/utils/date-utils";
-import { flattenTasks, mapPlanTasks, removeTaskFromPlan } from "@/src/lib/utils/plan-utils";
+import { flattenTasks, mapPlanTasks, removeTaskFromPlan, taskSortKey } from "@/src/lib/utils/plan-utils";
 import type { Goal, Plan, Task } from "@/src/lib/utils/types";
 import { EditableTaskRow } from "./EditableTaskRow";
 
 const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-
-function taskSortKey(task: Task): string {
-  return task.scheduledStart ?? `${task.preferredDate}T99:99`;
-}
 
 // Ported from the Stitch "Cheeky Plan Draft & Calendar Split View" screen —
 // the left-hand "My Plan" card. Tasks are grouped under their own phase

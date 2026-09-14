@@ -1,5 +1,6 @@
 "use client";
 
+import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useState, type KeyboardEvent } from "react";
 import { formatTimeLabel, parseISODate, parseISODateTime, toISODate } from "@/src/lib/utils/date-utils";
 import { TASK_TYPE_STYLES } from "@/src/lib/utils/task-colors";
@@ -29,6 +30,26 @@ export function EditableTaskRow({
   onSave: (task: Task) => void;
   onDelete: (taskId: string) => void;
 }) {
+  // Draggable so this row can be moved onto another task (swaps their
+  // scheduled times — see PlannerApp.handleTaskDragEnd) or onto the calendar
+  // (retargets date/time from the drop position). Also droppable under the
+  // same id, so another dragged task can land on this one.
+  // role: "group" (not dnd-kit's default "button") — this row already
+  // contains a real button for editing the title, so leaving it as "button"
+  // gave two same-named buttons nested inside each other.
+  const {
+    attributes,
+    listeners,
+    setNodeRef: setDraggableRef,
+    transform,
+    isDragging,
+  } = useDraggable({ id: task.id, attributes: { role: "group", roleDescription: "draggable task" } });
+  const { setNodeRef: setDroppableRef, isOver } = useDroppable({ id: task.id });
+  function setDragAndDropRef(node: HTMLDivElement | null) {
+    setDraggableRef(node);
+    setDroppableRef(node);
+  }
+
   const [editing, setEditing] = useState(false);
   const [title, setTitle] = useState(task.title);
   const [date, setDate] = useState(
@@ -139,7 +160,20 @@ export function EditableTaskRow({
   }
 
   return (
-    <div className="rounded-2xl border border-[#EDE2D4] bg-surface-low/60 p-3.5 transition-colors hover:border-coral/40">
+    <div
+      ref={setDragAndDropRef}
+      {...listeners}
+      {...attributes}
+      aria-label={task.title}
+      style={{
+        transform: transform ? `translate3d(${transform.x}px, ${transform.y}px, 0)` : undefined,
+        opacity: isDragging ? 0.4 : 1,
+        zIndex: isDragging ? 30 : undefined,
+      }}
+      className={`touch-none cursor-grab rounded-2xl border p-3.5 transition-colors active:cursor-grabbing ${
+        isOver ? "border-coral bg-peach/50" : "border-[#EDE2D4] bg-surface-low/60 hover:border-coral/40"
+      }`}
+    >
       <div className="mb-1.5 flex items-center justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-coral/10 text-xs font-bold text-coral">

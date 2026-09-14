@@ -55,6 +55,21 @@ export function removeTaskFromPlan(plan: Plan, taskId: string): Plan {
   };
 }
 
+// For the plan card's task list only (PlanSummaryCard, PlannerApp's drag
+// handler) — NOT for the calendar (taskDateKey/groupTasksByDate below),
+// which must always reflect real time regardless of manual reordering.
+// `order` (set only by dragging to reorder in the list) sorts first when
+// present; every explicitly-ordered task sorts before every task that
+// hasn't been touched yet, which then falls back to its actual scheduled
+// time — so a freshly generated plan (no manual reordering yet) displays
+// exactly as before.
+export function taskSortKey(task: Task): string {
+  if (task.order !== undefined) {
+    return `0:${String(task.order).padStart(10, "0")}`;
+  }
+  return `1:${task.scheduledStart ?? `${task.preferredDate}T99:99`}`;
+}
+
 export function taskDateKey(task: Task): string {
   if (task.scheduledStart) {
     return toISODate(parseISODateTime(task.scheduledStart));

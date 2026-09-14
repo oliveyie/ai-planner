@@ -1,3 +1,4 @@
+import { useDroppable } from "@dnd-kit/core";
 import {
   addDays,
   formatHourLabel,
@@ -19,6 +20,67 @@ const DEFAULT_RANGE_END_HOUR = 21; // typical day never needs to scroll to see a
 type GridEntry =
   | { kind: "task"; task: Task; start: Date; end: Date }
   | { kind: "busy"; block: BusyBlock; start: Date; end: Date };
+
+type PositionedGridEntry = {
+  entry: GridEntry;
+  top: number;
+  height: number;
+  leftPercent: number;
+  widthPercent: number;
+};
+
+// A separate component (not inlined in a .map()) since useDroppable is a
+// hook — rules of hooks forbid calling one a variable number of times inside
+// a loop body. Registers this whole day column as a drop target for a
+// dragged task; PlannerApp.handleTaskDragEnd reads `rangeStartMinutes` and
+// `pxPerMinute` back off the drop event to convert the drop's pixel position
+// into an actual time (snapped to the nearest 15 minutes).
+function DroppableDayColumn({
+  dateKey,
+  isToday,
+  hours,
+  rangeStartHour,
+  rangeStartMinutes,
+  pxPerMinute,
+  positioned,
+}: {
+  dateKey: string;
+  isToday: boolean;
+  hours: number[];
+  rangeStartHour: number;
+  rangeStartMinutes: number;
+  pxPerMinute: number;
+  positioned: PositionedGridEntry[];
+}) {
+  const { setNodeRef, isOver } = useDroppable({
+    id: `daycol:${dateKey}`,
+    data: { date: dateKey, rangeStartMinutes, pxPerMinute },
+  });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`relative rounded-lg ${isOver ? "bg-peach/40" : isToday ? "bg-buttercup/25" : "bg-surface-card/60"}`}
+    >
+      {hours.map((hour) => (
+        <div
+          key={hour}
+          className="absolute left-0 right-0 border-t border-[#EDE2D4]/50"
+          style={{ top: (hour - rangeStartHour) * PX_PER_HOUR }}
+        />
+      ))}
+      {positioned.map(({ entry, top, height, leftPercent, widthPercent }, i) => (
+        <div
+          key={i}
+          className="absolute overflow-hidden px-0.5"
+          style={{ top, height, left: `${leftPercent}%`, width: `${widthPercent}%` }}
+        >
+          {entry.kind === "task" ? <TaskChip task={entry.task} compact /> : <BusyBlockChip block={entry.block} compact />}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export function WeekView({
   anchorDate,
@@ -129,31 +191,16 @@ export function WeekView({
             );
 
             return (
-              <div
+              <DroppableDayColumn
                 key={key}
-                className={`relative rounded-lg ${isToday ? "bg-buttercup/25" : "bg-surface-card/60"}`}
-              >
-                {hours.map((hour) => (
-                  <div
-                    key={hour}
-                    className="absolute left-0 right-0 border-t border-[#EDE2D4]/50"
-                    style={{ top: (hour - rangeStartHour) * PX_PER_HOUR }}
-                  />
-                ))}
-                {positioned.map(({ entry, top, height, leftPercent, widthPercent }, i) => (
-                  <div
-                    key={i}
-                    className="absolute overflow-hidden px-0.5"
-                    style={{ top, height, left: `${leftPercent}%`, width: `${widthPercent}%` }}
-                  >
-                    {entry.kind === "task" ? (
-                      <TaskChip task={entry.task} compact />
-                    ) : (
-                      <BusyBlockChip block={entry.block} compact />
-                    )}
-                  </div>
-                ))}
-              </div>
+                dateKey={key}
+                isToday={isToday}
+                hours={hours}
+                rangeStartHour={rangeStartHour}
+                rangeStartMinutes={rangeStartMinutes}
+                pxPerMinute={pxPerMinute}
+                positioned={positioned}
+              />
             );
           })}
         </div>
