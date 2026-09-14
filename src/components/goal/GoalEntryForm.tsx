@@ -46,8 +46,10 @@ export function GoalEntryForm({
       <div className="pointer-events-none absolute -bottom-16 -left-12 h-56 w-56 rounded-full bg-buttercup/50 blur-2xl" />
 
       <div className="relative z-10 flex flex-col items-center gap-3 text-center">
-        <WhimbleMascot size="lg" />
-        <h1 className="font-fraunces text-2xl font-semibold tracking-tight text-foreground">what you want?</h1>
+        <div className="flex flex-col items-center">
+          <WhimbleMascot size="xl" bodyVariant="half" />
+          <h1 className="-mt-8 font-fraunces text-2xl font-semibold tracking-tight text-foreground">what you want?</h1>
+        </div>
 
         <form
           onSubmit={handleSubmit}
