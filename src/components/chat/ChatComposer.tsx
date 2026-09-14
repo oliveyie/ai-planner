@@ -44,7 +44,7 @@ export function ChatComposer({
     <div className="flex flex-col gap-1">
       <form
         onSubmit={handleSubmit}
-        className="flex items-end gap-2 rounded-2xl border border-[#EDE2D4] bg-surface-low/90 p-2 shadow-inner transition-all focus-within:border-coral/50"
+        className="flex items-center gap-2 rounded-2xl border border-[#EDE2D4] bg-surface-low/90 p-2 shadow-inner transition-all focus-within:border-coral/50"
       >
         <textarea
           className="flex-1 resize-none border-0 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-clay-light focus:outline-none focus:ring-0"
@@ -52,7 +52,7 @@ export function ChatComposer({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Only do long runs on Sundays…"
+          placeholder="tell whimble what did bad…"
           disabled={submitting}
         />
         <button
@@ -60,7 +60,7 @@ export function ChatComposer({
           disabled={submitting || !message.trim()}
           className="whitespace-nowrap rounded-full bg-coral px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_16px_rgba(249,124,86,0.3)] transition-all hover:bg-[#e86b45] active:scale-95 disabled:opacity-50"
         >
-          Send
+          bean fix
         </button>
       </form>
       {submitting && <p className="text-sm text-clay">whimble fixing plan…</p>}

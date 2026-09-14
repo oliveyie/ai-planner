@@ -5,7 +5,6 @@ import { CalendarShell } from "@/src/components/calendar/CalendarShell";
 import { ConnectCalendarScreen } from "@/src/components/calendar/ConnectCalendarScreen";
 import { EmptyCalendarPreview } from "@/src/components/calendar/EmptyCalendarPreview";
 import { PlanSummaryCard } from "@/src/components/calendar/PlanSummaryCard";
-import { PushControls } from "@/src/components/calendar/PushControls";
 import { ChatComposer } from "@/src/components/chat/ChatComposer";
 import { GoalEntryForm } from "@/src/components/goal/GoalEntryForm";
 import { AppHeader } from "@/src/components/layout/AppHeader";
@@ -314,7 +313,7 @@ export function PlannerApp() {
               onClick={handleNewGoal}
               className="text-sm font-semibold text-clay-light underline underline-offset-2 hover:text-clay"
             >
-              + New Whim
+              + new whimble
             </button>
           </div>
           {latestAssistantMessage && (
@@ -328,15 +327,16 @@ export function PlannerApp() {
             <PlanSummaryCard goal={goal} plan={plan} />
           </div>
           <div className="lg:col-span-7">
-            <CalendarShell goal={goal} plan={plan} busyBlocks={busyBlocks} connections={connections} hideHeader />
+            <CalendarShell
+              goal={goal}
+              plan={plan}
+              busyBlocks={busyBlocks}
+              connections={connections}
+              onPush={handlePush}
+              hideHeader
+            />
           </div>
         </div>
-
-        {connections.length > 0 && (
-          <div className="flex justify-end px-2">
-            <PushControls connections={connections} onPush={handlePush} />
-          </div>
-        )}
       </div>
     </>
   );

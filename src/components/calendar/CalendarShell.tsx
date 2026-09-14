@@ -4,10 +4,11 @@ import { useState } from "react";
 import { addDays, addMonths, formatMonthLabel, formatWeekRangeLabel } from "@/src/lib/date-utils";
 import { flattenTasks, groupBusyBlocksByDate, groupTasksByDate } from "@/src/lib/plan-utils";
 import { CALENDAR_PROVIDER_LABELS } from "@/src/lib/provider-labels";
-import type { BusyBlock, CalendarConnection, Goal, Plan } from "@/src/lib/types";
+import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, Plan } from "@/src/lib/types";
 import { AgendaList } from "./AgendaList";
 import { CalendarLegend } from "./CalendarLegend";
 import { MonthView } from "./MonthView";
+import { PushControls } from "./PushControls";
 import { WeekView } from "./WeekView";
 
 type ViewMode = "week" | "month" | "agenda";
@@ -20,6 +21,7 @@ export function CalendarShell({
   busyBlocks = [],
   connections = [],
   onNewGoal,
+  onPush,
   hideHeader = false,
 }: {
   goal: Goal;
@@ -27,6 +29,7 @@ export function CalendarShell({
   busyBlocks?: BusyBlock[];
   connections?: CalendarConnection[];
   onNewGoal?: () => void;
+  onPush?: (provider: CalendarProvider) => Promise<void>;
   hideHeader?: boolean;
 }) {
   const [view, setView] = useState<ViewMode>("week");
@@ -73,10 +76,11 @@ export function CalendarShell({
       )}
 
       <div className="flex h-full flex-col gap-3 rounded-3xl border border-[#EFE5D8] bg-surface-card/90 p-4 shadow-[0_6px_24px_rgba(215,190,170,0.06)] sm:p-5">
-        <div className="px-2">
+        <div className="flex flex-wrap items-start justify-between gap-2 px-2">
           <span className="text-sm font-bold text-foreground">
-            {connections.length > 0 ? "Compare with your Calendar" : "Your Calendar"}
+            {connections.length > 0 ? "whimble's calendar 4 u (draft)" : "Your Calendar"}
           </span>
+          {onPush && connections.length > 0 && <PushControls connections={connections} onPush={onPush} />}
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5 px-2">

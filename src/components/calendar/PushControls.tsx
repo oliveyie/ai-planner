@@ -32,14 +32,14 @@ export function PushControls({
   }
 
   return (
-    <div className="flex flex-col gap-1 px-2">
-      <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col items-end gap-1">
+      <div className="flex flex-wrap justify-end gap-2">
         {connections.map((connection) => (
           <button
             key={connection.provider}
             onClick={() => handleClick(connection.provider)}
             disabled={pushingProvider !== null}
-            className="rounded-full border border-coral/30 bg-peach/60 px-4 py-1.5 text-sm font-bold text-peach-dark shadow-sm transition-colors hover:bg-peach disabled:opacity-50"
+            className="whitespace-nowrap rounded-full border border-coral/30 bg-peach/60 px-3.5 py-1.5 text-xs font-bold text-peach-dark shadow-sm transition-colors hover:bg-peach disabled:opacity-50"
           >
             {pushingProvider === connection.provider
               ? "Pushing…"
@@ -48,11 +48,11 @@ export function PushControls({
         ))}
       </div>
       {successProvider && (
-        <p className="text-xs font-semibold text-sage-dark">
+        <p className="text-right text-xs font-semibold text-sage-dark">
           sent to {CALENDAR_PROVIDER_NAMES[successProvider]}. whimble did it. 🌸
         </p>
       )}
-      {error && <p className="text-xs font-semibold text-peach-dark">{error}</p>}
+      {error && <p className="text-right text-xs font-semibold text-peach-dark">{error}</p>}
     </div>
   );
 }
