@@ -6,9 +6,13 @@ import { TaskChip } from "./TaskChip";
 export function AgendaList({
   tasksByDate,
   busyBlocksByDate,
+  onSelectTask,
+  onSelectBusyBlock,
 }: {
   tasksByDate: Map<string, Task[]>;
   busyBlocksByDate?: Map<string, BusyBlock[]>;
+  onSelectTask?: (task: Task) => void;
+  onSelectBusyBlock?: (block: BusyBlock) => void;
 }) {
   const sortedDates = Array.from(new Set([...tasksByDate.keys(), ...(busyBlocksByDate?.keys() ?? [])])).sort();
 
@@ -29,10 +33,10 @@ export function AgendaList({
           </div>
           <div className="flex flex-col gap-1.5">
             {(busyBlocksByDate?.get(dateKey) ?? []).map((block, i) => (
-              <BusyBlockChip key={`busy-${i}`} block={block} />
+              <BusyBlockChip key={`busy-${i}`} block={block} onClick={onSelectBusyBlock} />
             ))}
             {(tasksByDate.get(dateKey) ?? []).map((task) => (
-              <TaskChip key={task.id} task={task} />
+              <TaskChip key={task.id} task={task} onClick={onSelectTask} />
             ))}
           </div>
         </div>

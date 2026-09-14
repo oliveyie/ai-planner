@@ -1,18 +1,13 @@
 "use client";
 
 import { useDraggable, useDroppable } from "@dnd-kit/core";
-import { useState, type KeyboardEvent } from "react";
-import { formatTimeLabel, parseISODate, parseISODateTime, toISODate } from "@/src/lib/utils/date-utils";
+import { useState } from "react";
+import { formatTimeLabel, parseISODate, parseISODateTime } from "@/src/lib/utils/date-utils";
 import { TASK_TYPE_STYLES } from "@/src/lib/utils/task-colors";
 import type { Task } from "@/src/lib/utils/types";
+import { TaskEditFields } from "./TaskEditFields";
 
 const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
-
-function timeOfDay(iso?: string): string {
-  if (!iso) return "";
-  const [, time] = iso.split("T");
-  return time ?? "";
-}
 
 // A plan-card task row that can be clicked into an edit mode (title, date,
 // start/end time) or deleted outright. Saves write straight through to the
@@ -51,45 +46,11 @@ export function EditableTaskRow({
   }
 
   const [editing, setEditing] = useState(false);
-  const [title, setTitle] = useState(task.title);
-  const [date, setDate] = useState(
-    task.scheduledStart ? toISODate(parseISODateTime(task.scheduledStart)) : task.preferredDate,
-  );
-  const [startTime, setStartTime] = useState(timeOfDay(task.scheduledStart));
-  const [endTime, setEndTime] = useState(timeOfDay(task.scheduledEnd));
 
   const start = task.scheduledStart ? parseISODateTime(task.scheduledStart) : null;
   const end = task.scheduledEnd ? parseISODateTime(task.scheduledEnd) : null;
   const dayLabel = start ? WEEKDAY_SHORT[start.getDay()] : WEEKDAY_SHORT[parseISODate(task.preferredDate).getDay()];
   const style = TASK_TYPE_STYLES[task.type];
-
-  function resetFields() {
-    setTitle(task.title);
-    setDate(task.scheduledStart ? toISODate(parseISODateTime(task.scheduledStart)) : task.preferredDate);
-    setStartTime(timeOfDay(task.scheduledStart));
-    setEndTime(timeOfDay(task.scheduledEnd));
-  }
-
-  function handleSave() {
-    const trimmedTitle = title.trim();
-    if (!trimmedTitle) return;
-
-    const scheduled = Boolean(startTime && endTime);
-    onSave({
-      ...task,
-      title: trimmedTitle,
-      preferredDate: date,
-      scheduledStart: scheduled ? `${date}T${startTime}` : undefined,
-      scheduledEnd: scheduled ? `${date}T${endTime}` : undefined,
-      schedulingStatus: scheduled ? "scheduled" : "conflict",
-    });
-    setEditing(false);
-  }
-
-  function handleCancel() {
-    resetFields();
-    setEditing(false);
-  }
 
   function handleDelete() {
     if (window.confirm(`Delete "${task.title}"? This can't be undone.`)) {
@@ -97,65 +58,16 @@ export function EditableTaskRow({
     }
   }
 
-  function handleTitleKeyDown(event: KeyboardEvent<HTMLInputElement>) {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      handleSave();
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      handleCancel();
-    }
-  }
-
   if (editing) {
     return (
-      <div className="rounded-2xl border border-coral/40 bg-surface-low/60 p-3.5">
-        <input
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          onKeyDown={handleTitleKeyDown}
-          className="w-full rounded-lg border border-[#EDE2D4] bg-white px-2 py-1 text-sm font-bold text-foreground focus:outline-none focus:ring-1 focus:ring-coral/50"
-          placeholder="Task title"
-          autoFocus
-        />
-        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="rounded-lg border border-[#EDE2D4] bg-white px-2 py-1 text-foreground"
-          />
-          <input
-            type="time"
-            value={startTime}
-            onChange={(e) => setStartTime(e.target.value)}
-            className="rounded-lg border border-[#EDE2D4] bg-white px-2 py-1 text-foreground"
-          />
-          <span className="text-clay-light">–</span>
-          <input
-            type="time"
-            value={endTime}
-            onChange={(e) => setEndTime(e.target.value)}
-            className="rounded-lg border border-[#EDE2D4] bg-white px-2 py-1 text-foreground"
-          />
-        </div>
-        <div className="mt-2.5 flex items-center gap-2">
-          <button
-            type="button"
-            onClick={handleSave}
-            className="rounded-full bg-coral px-3 py-1 text-xs font-bold text-white transition-colors hover:bg-[#e86b45]"
-          >
-            save
-          </button>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="rounded-full border border-[#EDE2D4] px-3 py-1 text-xs font-bold text-clay transition-colors hover:text-foreground"
-          >
-            cancel
-          </button>
-        </div>
-      </div>
+      <TaskEditFields
+        task={task}
+        onSave={(updated) => {
+          onSave(updated);
+          setEditing(false);
+        }}
+        onCancel={() => setEditing(false)}
+      />
     );
   }
 

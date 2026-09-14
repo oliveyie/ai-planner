@@ -13,7 +13,7 @@ import { BusyBlockChip } from "./BusyBlockChip";
 import { TaskChip } from "./TaskChip";
 
 const WEEKDAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]; // matches this app's Sunday-start week
-const PX_PER_HOUR = 56;
+const DEFAULT_PX_PER_HOUR = 56;
 const DEFAULT_RANGE_START_HOUR = 6; // matches scheduler.ts's day window, so a
 const DEFAULT_RANGE_END_HOUR = 21; // typical day never needs to scroll to see anything
 
@@ -41,16 +41,22 @@ function DroppableDayColumn({
   hours,
   rangeStartHour,
   rangeStartMinutes,
+  pxPerHour,
   pxPerMinute,
   positioned,
+  onSelectTask,
+  onSelectBusyBlock,
 }: {
   dateKey: string;
   isToday: boolean;
   hours: number[];
   rangeStartHour: number;
   rangeStartMinutes: number;
+  pxPerHour: number;
   pxPerMinute: number;
   positioned: PositionedGridEntry[];
+  onSelectTask?: (task: Task) => void;
+  onSelectBusyBlock?: (block: BusyBlock) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `daycol:${dateKey}`,
@@ -66,7 +72,7 @@ function DroppableDayColumn({
         <div
           key={hour}
           className="absolute left-0 right-0 border-t border-[#EDE2D4]/50"
-          style={{ top: (hour - rangeStartHour) * PX_PER_HOUR }}
+          style={{ top: (hour - rangeStartHour) * pxPerHour }}
         />
       ))}
       {positioned.map(({ entry, top, height, leftPercent, widthPercent }, i) => (
@@ -75,7 +81,16 @@ function DroppableDayColumn({
           className="absolute overflow-hidden px-0.5"
           style={{ top, height, left: `${leftPercent}%`, width: `${widthPercent}%` }}
         >
-          {entry.kind === "task" ? <TaskChip task={entry.task} compact /> : <BusyBlockChip block={entry.block} compact />}
+          {entry.kind === "task" ? (
+            <TaskChip
+              task={entry.task}
+              compact
+              draggableId={`cal:${entry.task.id}`}
+              onClick={onSelectTask}
+            />
+          ) : (
+            <BusyBlockChip block={entry.block} compact onClick={onSelectBusyBlock} />
+          )}
         </div>
       ))}
     </div>
@@ -86,10 +101,20 @@ export function WeekView({
   anchorDate,
   tasksByDate,
   busyBlocksByDate,
+  onSelectTask,
+  onSelectBusyBlock,
+  pxPerHour = DEFAULT_PX_PER_HOUR,
+  maxHeightClassName = "max-h-[32rem]",
 }: {
   anchorDate: Date;
   tasksByDate?: Map<string, Task[]>;
   busyBlocksByDate?: Map<string, BusyBlock[]>;
+  onSelectTask?: (task: Task) => void;
+  onSelectBusyBlock?: (block: BusyBlock) => void;
+  // Both let the "bigger calendar" expanded modal render a taller, roomier
+  // grid instead of just a bigger empty frame around the same-size content.
+  pxPerHour?: number;
+  maxHeightClassName?: string;
 }) {
   const weekStart = startOfWeek(anchorDate);
   const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
@@ -134,8 +159,8 @@ export function WeekView({
   rangeEndHour = Math.min(24, Math.max(rangeEndHour, rangeStartHour + 1));
 
   const hours = Array.from({ length: rangeEndHour - rangeStartHour }, (_, i) => rangeStartHour + i);
-  const gridHeight = (rangeEndHour - rangeStartHour) * PX_PER_HOUR;
-  const pxPerMinute = PX_PER_HOUR / 60;
+  const gridHeight = (rangeEndHour - rangeStartHour) * pxPerHour;
+  const pxPerMinute = pxPerHour / 60;
   const rangeStartMinutes = rangeStartHour * 60;
 
   return (
@@ -144,7 +169,7 @@ export function WeekView({
         <div className="flex flex-wrap items-center gap-1.5 rounded-xl border border-dashed border-[#EDE2D4] bg-surface-low/50 p-2">
           <span className="px-1 text-[11px] font-bold text-clay-light">Needs a time:</span>
           {unscheduledTasks.map((task) => (
-            <TaskChip key={task.id} task={task} compact />
+            <TaskChip key={task.id} task={task} compact onClick={onSelectTask} />
           ))}
         </div>
       )}
@@ -166,14 +191,14 @@ export function WeekView({
         })}
       </div>
 
-      <div className="max-h-[32rem] overflow-y-auto rounded-2xl border border-[#EDE2D4]/50 bg-surface-low/20">
+      <div className={`${maxHeightClassName} overflow-y-auto rounded-2xl border border-[#EDE2D4]/50 bg-surface-low/20`}>
         <div className="grid grid-cols-[2.75rem_repeat(7,1fr)] gap-1.5 p-1 sm:gap-2" style={{ height: gridHeight }}>
           <div className="relative">
             {hours.map((hour) => (
               <div
                 key={hour}
                 className="absolute right-1 -translate-y-1/2 whitespace-nowrap text-[10px] font-semibold text-clay-light"
-                style={{ top: (hour - rangeStartHour) * PX_PER_HOUR }}
+                style={{ top: (hour - rangeStartHour) * pxPerHour }}
               >
                 {formatHourLabel(hour)}
               </div>
@@ -198,8 +223,11 @@ export function WeekView({
                 hours={hours}
                 rangeStartHour={rangeStartHour}
                 rangeStartMinutes={rangeStartMinutes}
+                pxPerHour={pxPerHour}
                 pxPerMinute={pxPerMinute}
                 positioned={positioned}
+                onSelectTask={onSelectTask}
+                onSelectBusyBlock={onSelectBusyBlock}
               />
             );
           })}

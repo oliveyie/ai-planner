@@ -2,10 +2,12 @@
 
 import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { useEffect, useRef, useState } from "react";
+import { BusyBlockDetailModal } from "@/src/components/calendar/BusyBlockDetailModal";
 import { CalendarShell } from "@/src/components/calendar/CalendarShell";
 import { ConnectCalendarScreen } from "@/src/components/calendar/ConnectCalendarScreen";
 import { EmptyCalendarPreview } from "@/src/components/calendar/EmptyCalendarPreview";
 import { PlanSummaryCard } from "@/src/components/calendar/PlanSummaryCard";
+import { TaskDetailModal } from "@/src/components/calendar/TaskDetailModal";
 import { ChatComposer } from "@/src/components/chat/ChatComposer";
 import { GoalEntryForm } from "@/src/components/goal/GoalEntryForm";
 import { AppHeader } from "@/src/components/layout/AppHeader";
@@ -25,7 +27,13 @@ import {
   savePlan,
 } from "@/src/lib/db/db";
 import { makeId } from "@/src/lib/utils/ids";
-import { buildPlanChatMessage, flattenTasks, mapPlanTasks, taskSortKey } from "@/src/lib/utils/plan-utils";
+import {
+  buildPlanChatMessage,
+  flattenTasks,
+  mapPlanTasks,
+  removeTaskFromPlan,
+  taskSortKey,
+} from "@/src/lib/utils/plan-utils";
 import type {
   BusyBlock,
   CalendarConnection,
@@ -76,6 +84,10 @@ export function PlannerApp() {
   const [skippedConnect, setSkippedConnect] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  // Set by clicking a task/busy block chip anywhere on the calendar
+  // (WeekView/MonthView/AgendaList) — opens TaskDetailModal/BusyBlockDetailModal.
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedBusyBlock, setSelectedBusyBlock] = useState<BusyBlock | null>(null);
   const initialized = useRef(false);
   // 8px activation distance so a plain click (open a task's edit mode) still
   // works — dnd-kit only treats it as a drag once the pointer actually moves.
@@ -259,21 +271,42 @@ export function PlannerApp() {
     setPlan(updatedPlan);
   }
 
-  // Drag-and-drop for tasks (Pass 2): dropping a task onto a calendar day
-  // column retargets its date/time from the drop position. Dropping it onto
-  // another task row reorders the list *without* touching either task's
-  // date/time — an earlier version swapped their scheduled times instead,
-  // which the user found confusing ("reordering shouldn't change the time or
-  // date"), so this now uses Task.order (see plan-utils.ts's taskSortKey)
-  // purely for display order in the plan card, decoupled from real
-  // scheduling. Scoped to reordering within a single phase, matching how the
-  // plan card groups its list; a cross-phase drop is ignored.
+  function handleSaveSelectedTask(updatedTask: Task) {
+    if (!plan) return;
+    handleUpdatePlan(mapPlanTasks(plan, new Map([[updatedTask.id, updatedTask]])));
+  }
+
+  function handleDeleteSelectedTask(taskId: string) {
+    if (!plan) return;
+    handleUpdatePlan(removeTaskFromPlan(plan, taskId));
+  }
+
+  // Drag-and-drop for tasks (Pass 2, extended to drag natively from the
+  // calendar grid itself, in both WeekView and MonthView): dropping a task
+  // onto a WeekView day column ("daycol:") retargets its date/time from the
+  // drop's pixel position; dropping it onto a MonthView cell ("monthcol:")
+  // only moves its date, keeping the same time of day (no time axis there to
+  // derive a new time from). Dropping it onto another task row reorders the
+  // list *without* touching either task's date/time —
+  // an earlier version swapped their scheduled times instead, which the user
+  // found confusing ("reordering shouldn't change the time or date"), so this
+  // now uses Task.order (see plan-utils.ts's taskSortKey) purely for display
+  // order in the plan card, decoupled from real scheduling. Scoped to
+  // reordering within a single phase, matching how the plan card groups its
+  // list; a cross-phase drop is ignored.
+  //
+  // A drag can originate either from the plan card's EditableTaskRow (plain
+  // task id) or from a TaskChip on the calendar grid (id prefixed "cal:") —
+  // the prefix exists only to keep the two draggables' dnd-kit ids distinct
+  // when both can be mounted for the same task at once; every lookup below
+  // strips it back off first so the rest of this function doesn't care which
+  // one started the drag.
   function handleTaskDragEnd(event: DragEndEvent) {
     if (!plan) return;
     const { active, over } = event;
     if (!over) return;
 
-    const activeId = String(active.id);
+    const activeId = String(active.id).replace(/^cal:/, "");
     const overId = String(over.id);
     if (activeId === overId) return;
 
@@ -320,6 +353,28 @@ export function PlannerApp() {
           ]),
         ),
       );
+      return;
+    }
+
+    if (overId.startsWith("monthcol:")) {
+      // Month view has no time axis, so a drop here only moves the task to a
+      // new date — the existing time of day (if any) carries over unchanged,
+      // unlike a "daycol:" drop (WeekView), which derives a new time from the
+      // drop's pixel position.
+      const dropData = over.data.current as { date: string } | undefined;
+      if (!dropData) return;
+
+      const updated: Task =
+        draggedTask.scheduledStart && draggedTask.scheduledEnd
+          ? {
+              ...draggedTask,
+              preferredDate: dropData.date,
+              scheduledStart: `${dropData.date}T${draggedTask.scheduledStart.split("T")[1]}`,
+              scheduledEnd: `${dropData.date}T${draggedTask.scheduledEnd.split("T")[1]}`,
+            }
+          : { ...draggedTask, preferredDate: dropData.date };
+
+      handleUpdatePlan(mapPlanTasks(plan, new Map([[draggedTask.id, updated]])));
       return;
     }
 
@@ -442,11 +497,31 @@ export function PlannerApp() {
                 busyBlocks={busyBlocks}
                 connections={connections}
                 onPush={handlePush}
+                onSelectTask={(task) => setSelectedTaskId(task.id)}
+                onSelectBusyBlock={setSelectedBusyBlock}
                 hideHeader
               />
             </div>
           </div>
         </DndContext>
+
+        {selectedTaskId &&
+          (() => {
+            const selectedTask = flattenTasks(plan).find((t) => t.id === selectedTaskId);
+            if (!selectedTask) return null;
+            return (
+              <TaskDetailModal
+                task={selectedTask}
+                onSave={handleSaveSelectedTask}
+                onDelete={handleDeleteSelectedTask}
+                onClose={() => setSelectedTaskId(null)}
+              />
+            );
+          })()}
+
+        {selectedBusyBlock && (
+          <BusyBlockDetailModal block={selectedBusyBlock} onClose={() => setSelectedBusyBlock(null)} />
+        )}
       </div>
     </>
   );
