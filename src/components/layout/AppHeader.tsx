@@ -40,7 +40,7 @@ export function AppHeader({
     <header className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-5">
       <div className="flex items-center gap-2.5 rounded-full border border-peach-dark/10 bg-surface-card px-3.5 py-1.5 shadow-sm">
         <WhimbleMascot size="sm" />
-        <span className="font-fraunces font-semibold text-lg text-foreground tracking-tight">WhimsyCal</span>
+        <span className="font-fraunces font-semibold text-lg text-foreground tracking-tight">Whimble</span>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">

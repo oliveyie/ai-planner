@@ -45,7 +45,7 @@ function localTimeZone(): string {
 
 // Used whenever a provider doesn't give us a usable color for a calendar
 // (Microsoft's "auto", or a listing call that fails) — reuses this app's own
-// accent palette so fallback colors still feel native to WhimsyCal.
+// accent palette so fallback colors still feel native to Whimble.
 const FALLBACK_PALETTE = ["#F97C56", "#3B7A57", "#2B749E", "#7053A8", "#A67C1E", "#D96B43"];
 
 function fallbackColor(index: number): string {

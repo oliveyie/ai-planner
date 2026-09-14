@@ -1,4 +1,4 @@
-# WhimsyCal — Spec v0.1
+# Whimble — Spec v0.1
 
 ## 1. Pitch
 

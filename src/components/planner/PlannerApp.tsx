@@ -34,7 +34,7 @@ import type {
   Plan,
 } from "@/src/lib/types";
 
-const SKIP_STORAGE_KEY = "whimsycal:calendarConnectSkipped";
+const SKIP_STORAGE_KEY = "whimble:calendarConnectSkipped";
 const DEFAULT_HORIZON_DAYS = 180; // used before a target date is known yet
 // How far back to also fetch busy blocks for, purely for display context —
 // without this, navigating the calendar back a week/month looks like those

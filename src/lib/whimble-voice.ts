@@ -1,4 +1,4 @@
-// Whimble is WhimsyCal's mascot — a small, derpy, well-meaning bean who
+// Whimble is the app's own mascot — a small, derpy, well-meaning bean who
 // plans your goals. He has a distinct voice, used for narrative/conversational
 // copy (chat replies, headings, empty states, status text) written both by
 // hand in components and by the LLM (see generate-plan.ts, which embeds this

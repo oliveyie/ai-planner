@@ -23,7 +23,7 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "WhimsyCal",
+  title: "Whimble",
   description: "Turning whims into plans.",
 };
 
