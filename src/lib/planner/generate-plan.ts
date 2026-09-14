@@ -6,7 +6,7 @@
 
 import OpenAI from "openai";
 import type { ZodType } from "zod";
-import { makeId } from "./ids";
+import { makeId } from "../utils/ids";
 import {
   critiqueJsonSchema,
   critiqueResultSchema,
@@ -16,9 +16,9 @@ import {
   type LlmPlan,
   type LlmTask,
   type LlmWeek,
-} from "./llm-schemas";
-import { scheduleTasks } from "./scheduler";
-import type { BusyBlock, Goal, Phase, Plan, Task, Week } from "./types";
+} from "../schemas/llm-schemas";
+import { scheduleTasks } from "../calendar/scheduler";
+import type { BusyBlock, Goal, Phase, Plan, Task, Week } from "../utils/types";
 import { WHIMBLE_VOICE_GUIDE } from "./whimble-voice";
 
 const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";

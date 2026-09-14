@@ -1,6 +1,6 @@
 // Route Handler factories shared by app/api/auth/{google,microsoft}/** so the
 // two providers can't drift in how the OAuth dance itself is handled — only
-// src/lib/oauth-providers.ts differs per provider.
+// ./oauth-providers.ts differs per provider.
 
 import { NextResponse, type NextRequest } from "next/server";
 import {
@@ -10,7 +10,7 @@ import {
   getAppBaseUrl,
   refreshAccessToken,
 } from "./oauth-providers";
-import type { CalendarProvider } from "./types";
+import type { CalendarProvider } from "../utils/types";
 
 function stateCookieName(provider: CalendarProvider): string {
   return `oauth_state_${provider}`;

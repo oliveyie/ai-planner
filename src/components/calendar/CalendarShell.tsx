@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { addDays, addMonths, formatMonthLabel, formatWeekRangeLabel } from "@/src/lib/date-utils";
-import { flattenTasks, groupBusyBlocksByDate, groupTasksByDate } from "@/src/lib/plan-utils";
-import { CALENDAR_PROVIDER_LABELS } from "@/src/lib/provider-labels";
-import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, Plan } from "@/src/lib/types";
+import { addDays, addMonths, formatMonthLabel, formatWeekRangeLabel } from "@/src/lib/utils/date-utils";
+import { flattenTasks, groupBusyBlocksByDate, groupTasksByDate } from "@/src/lib/utils/plan-utils";
+import { CALENDAR_PROVIDER_LABELS } from "@/src/lib/providers/provider-labels";
+import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, Plan } from "@/src/lib/utils/types";
 import { AgendaList } from "./AgendaList";
 import { CalendarLegend } from "./CalendarLegend";
 import { MonthView } from "./MonthView";

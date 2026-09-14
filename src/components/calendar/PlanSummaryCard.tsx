@@ -1,7 +1,7 @@
-import { formatTimeLabel, parseISODate, parseISODateTime, toISODate } from "@/src/lib/date-utils";
-import { flattenTasks } from "@/src/lib/plan-utils";
-import { TASK_TYPE_STYLES } from "@/src/lib/task-colors";
-import type { Goal, Plan, Task } from "@/src/lib/types";
+import { formatTimeLabel, parseISODate, parseISODateTime, toISODate } from "@/src/lib/utils/date-utils";
+import { flattenTasks } from "@/src/lib/utils/plan-utils";
+import { TASK_TYPE_STYLES } from "@/src/lib/utils/task-colors";
+import type { Goal, Plan, Task } from "@/src/lib/utils/types";
 
 const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 

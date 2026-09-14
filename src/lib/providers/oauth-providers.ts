@@ -3,7 +3,7 @@
 // app/api/auth/**) ever sees a client secret; nothing here persists tokens —
 // that's the client's job (IndexedDB), matching the "stateless relay" design.
 
-import type { CalendarProvider } from "./types";
+import type { CalendarProvider } from "../utils/types";
 
 type ProviderConfig = {
   authorizeUrl: string;

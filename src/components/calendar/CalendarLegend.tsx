@@ -1,5 +1,5 @@
-import { PLAN_TASK_COLOR } from "@/src/lib/task-colors";
-import type { BusyBlock } from "@/src/lib/types";
+import { PLAN_TASK_COLOR } from "@/src/lib/utils/task-colors";
+import type { BusyBlock } from "@/src/lib/utils/types";
 
 // Deduped by calendarId, in first-seen order — one dot per distinct synced
 // calendar currently contributing events, using each calendar's own real

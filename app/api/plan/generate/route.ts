@@ -1,7 +1,7 @@
-import { generatePlan } from "@/src/lib/generate-plan";
-import { makeId } from "@/src/lib/ids";
-import { toISODate } from "@/src/lib/date-utils";
-import type { BusyBlock, Goal } from "@/src/lib/types";
+import { generatePlan } from "@/src/lib/planner/generate-plan";
+import { makeId } from "@/src/lib/utils/ids";
+import { toISODate } from "@/src/lib/utils/date-utils";
+import type { BusyBlock, Goal } from "@/src/lib/utils/types";
 
 type GenerateRequestBody = {
   title?: string;

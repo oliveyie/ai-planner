@@ -1,5 +1,5 @@
-import { formatTimeLabel } from "@/src/lib/date-utils";
-import type { BusyBlock } from "@/src/lib/types";
+import { formatTimeLabel } from "@/src/lib/utils/date-utils";
+import type { BusyBlock } from "@/src/lib/utils/types";
 
 // Read-only, from a connected calendar (SPEC.md §4/§6) — shows the real
 // title when the provider returned one, falling back to just the time range

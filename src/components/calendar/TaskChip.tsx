@@ -1,6 +1,6 @@
-import { formatTimeLabel, parseISODateTime } from "@/src/lib/date-utils";
-import { PLAN_TASK_CHIP_CLASS } from "@/src/lib/task-colors";
-import type { Task } from "@/src/lib/types";
+import { formatTimeLabel, parseISODateTime } from "@/src/lib/utils/date-utils";
+import { PLAN_TASK_CHIP_CLASS } from "@/src/lib/utils/task-colors";
+import type { Task } from "@/src/lib/utils/types";
 
 export function TaskChip({ task, compact = false }: { task: Task; compact?: boolean }) {
   const time = task.scheduledStart ? formatTimeLabel(parseISODateTime(task.scheduledStart)) : null;

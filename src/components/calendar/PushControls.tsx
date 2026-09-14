@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { CALENDAR_PROVIDER_NAMES } from "@/src/lib/provider-labels";
-import type { CalendarConnection, CalendarProvider } from "@/src/lib/types";
+import { CALENDAR_PROVIDER_NAMES } from "@/src/lib/providers/provider-labels";
+import type { CalendarConnection, CalendarProvider } from "@/src/lib/utils/types";
 
 export function PushControls({
   connections,

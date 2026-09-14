@@ -1,5 +1,5 @@
-import { refinePlan } from "@/src/lib/generate-plan";
-import type { BusyBlock, Goal, Plan } from "@/src/lib/types";
+import { refinePlan } from "@/src/lib/planner/generate-plan";
+import type { BusyBlock, Goal, Plan } from "@/src/lib/utils/types";
 
 type RefineRequestBody = {
   goal?: Goal;

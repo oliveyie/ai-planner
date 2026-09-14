@@ -3,9 +3,9 @@
 // token — only token exchange/refresh (src/lib/oauth-providers.ts) needs the
 // server, since only those require the client secret.
 
-import { getCalendarConnection, saveCalendarConnection } from "./db";
-import { mapPlanTasks } from "./plan-utils";
-import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, Plan, Task } from "./types";
+import { getCalendarConnection, saveCalendarConnection } from "../db/db";
+import { mapPlanTasks } from "../utils/plan-utils";
+import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, Plan, Task } from "../utils/types";
 
 async function ensureValidAccessToken(connection: CalendarConnection): Promise<CalendarConnection> {
   const stillValid = new Date(connection.expiresAt).getTime() > Date.now() + 60_000;

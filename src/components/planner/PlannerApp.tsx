@@ -9,8 +9,8 @@ import { ChatComposer } from "@/src/components/chat/ChatComposer";
 import { GoalEntryForm } from "@/src/components/goal/GoalEntryForm";
 import { AppHeader } from "@/src/components/layout/AppHeader";
 import { WhimbleMascot } from "@/src/components/whimble/WhimbleMascot";
-import { fetchCalendarEvents, pushPlanToCalendar } from "@/src/lib/calendar-api";
-import { addDays, parseISODate } from "@/src/lib/date-utils";
+import { fetchCalendarEvents, pushPlanToCalendar } from "@/src/lib/calendar/calendar-api";
+import { addDays, parseISODate } from "@/src/lib/utils/date-utils";
 import {
   deleteCalendarConnection,
   getActiveGoal,
@@ -21,9 +21,9 @@ import {
   saveChatMessage,
   saveGoal,
   savePlan,
-} from "@/src/lib/db";
-import { makeId } from "@/src/lib/ids";
-import { buildPlanChatMessage } from "@/src/lib/plan-utils";
+} from "@/src/lib/db/db";
+import { makeId } from "@/src/lib/utils/ids";
+import { buildPlanChatMessage } from "@/src/lib/utils/plan-utils";
 import type {
   BusyBlock,
   CalendarConnection,
@@ -31,7 +31,7 @@ import type {
   ChatMessage,
   Goal,
   Plan,
-} from "@/src/lib/types";
+} from "@/src/lib/utils/types";
 
 const SKIP_STORAGE_KEY = "whimble:calendarConnectSkipped";
 const DEFAULT_HORIZON_DAYS = 180; // used before a target date is known yet

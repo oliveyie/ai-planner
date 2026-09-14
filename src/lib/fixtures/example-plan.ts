@@ -2,9 +2,9 @@
 // No LLM involved — this is the fixture the calendar shell renders before
 // generation exists (that's step 3).
 
-import { addDays, startOfWeek, toISODate, toISODateTime } from "../date-utils";
-import { makeId } from "../ids";
-import type { Goal, Phase, Plan, Task, TaskType, Week } from "../types";
+import { addDays, startOfWeek, toISODate, toISODateTime } from "../utils/date-utils";
+import { makeId } from "../utils/ids";
+import type { Goal, Phase, Plan, Task, TaskType, Week } from "../utils/types";
 
 function scheduledTask(params: {
   weekStart: Date;

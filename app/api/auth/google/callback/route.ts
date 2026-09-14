@@ -1,3 +1,3 @@
-import { createCallbackHandler } from "@/src/lib/oauth-routes";
+import { createCallbackHandler } from "@/src/lib/providers/oauth-routes";
 
 export const GET = createCallbackHandler("google");

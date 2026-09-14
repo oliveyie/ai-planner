@@ -1,5 +1,5 @@
-import { addDays, isSameDay, startOfMonth, startOfWeek, toISODate } from "@/src/lib/date-utils";
-import type { BusyBlock, Task } from "@/src/lib/types";
+import { addDays, isSameDay, startOfMonth, startOfWeek, toISODate } from "@/src/lib/utils/date-utils";
+import type { BusyBlock, Task } from "@/src/lib/utils/types";
 import { BusyBlockChip } from "./BusyBlockChip";
 import { TaskChip } from "./TaskChip";
 

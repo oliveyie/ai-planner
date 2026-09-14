@@ -2,7 +2,7 @@
 // client components, inside effects — never during server rendering.
 
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
-import type { CalendarConnection, CalendarProvider, ChatMessage, Goal, Plan } from "./types";
+import type { CalendarConnection, CalendarProvider, ChatMessage, Goal, Plan } from "../utils/types";
 
 const DB_NAME = "ai-planner";
 const DB_VERSION = 1;

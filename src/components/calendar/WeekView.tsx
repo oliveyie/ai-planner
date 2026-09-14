@@ -5,9 +5,9 @@ import {
   parseISODateTime,
   startOfWeek,
   toISODate,
-} from "@/src/lib/date-utils";
-import { layoutDayColumn } from "@/src/lib/time-grid";
-import type { BusyBlock, Task } from "@/src/lib/types";
+} from "@/src/lib/utils/date-utils";
+import { layoutDayColumn } from "@/src/lib/calendar/time-grid";
+import type { BusyBlock, Task } from "@/src/lib/utils/types";
 import { BusyBlockChip } from "./BusyBlockChip";
 import { TaskChip } from "./TaskChip";
 

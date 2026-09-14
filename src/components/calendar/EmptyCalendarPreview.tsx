@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { fetchCalendarEvents } from "@/src/lib/calendar-api";
+import { fetchCalendarEvents } from "@/src/lib/calendar/calendar-api";
 import {
   addDays,
   addMonths,
@@ -11,10 +11,10 @@ import {
   startOfMonth,
   startOfWeek,
   toISODate,
-} from "@/src/lib/date-utils";
-import { groupBusyBlocksByDate } from "@/src/lib/plan-utils";
-import { CALENDAR_PROVIDER_LABELS } from "@/src/lib/provider-labels";
-import type { BusyBlock, CalendarConnection } from "@/src/lib/types";
+} from "@/src/lib/utils/date-utils";
+import { groupBusyBlocksByDate } from "@/src/lib/utils/plan-utils";
+import { CALENDAR_PROVIDER_LABELS } from "@/src/lib/providers/provider-labels";
+import type { BusyBlock, CalendarConnection } from "@/src/lib/utils/types";
 import { BusyBlockChip } from "./BusyBlockChip";
 import { CalendarLegend } from "./CalendarLegend";
 import { WeekView } from "./WeekView";

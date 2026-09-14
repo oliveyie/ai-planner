@@ -1,5 +1,5 @@
-import { parseISODate } from "@/src/lib/date-utils";
-import type { BusyBlock, Task } from "@/src/lib/types";
+import { parseISODate } from "@/src/lib/utils/date-utils";
+import type { BusyBlock, Task } from "@/src/lib/utils/types";
 import { BusyBlockChip } from "./BusyBlockChip";
 import { TaskChip } from "./TaskChip";
 

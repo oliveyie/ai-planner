@@ -1,4 +1,4 @@
-import type { CalendarProvider } from "./types";
+import type { CalendarProvider } from "../utils/types";
 
 // Shared between AppHeader (dropdown), CalendarShell, and EmptyCalendarPreview
 // so the "connected" wording can't drift between where it's shown.

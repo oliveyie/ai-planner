@@ -10,8 +10,8 @@
 // date-utils parser, which is intended only for the datetimes this app
 // produces and consumes itself (task titles/times).
 
-import { addDays, startOfWeek, toISODateTime } from "./date-utils";
-import type { BusyBlock, Task } from "./types";
+import { addDays, startOfWeek, toISODateTime } from "../utils/date-utils";
+import type { BusyBlock, Task } from "../utils/types";
 
 const DAY_START_HOUR = 6;
 const DAY_END_HOUR = 21;
