@@ -1,13 +1,15 @@
 import { parseISODateTime, toISODate } from "./date-utils";
 import type { BusyBlock, Plan, Task } from "./types";
 
-// Deterministic (not LLM-generated) short status line for the Mr. Whimble
-// chat box. The plan's own summary + phase/step breakdown is shown in
-// PlanSummaryCard instead (built from the same `plan` data, so it can never
-// drift) — this is just the "done" ping plus any assumptions the user might
-// want to correct, in Whimble's voice (see whimble-voice.ts).
+// Short status message for the Mr. Whimble chat box. The plan's own summary
+// + phase/step breakdown is shown in PlanSummaryCard instead (built from the
+// same `plan` data, so it can never drift) — this is just Whimble's reaction
+// to *this* plan (LLM-written per-plan, not a hardcoded line — see
+// plan-rules.ts §12 and whimble-voice.ts) plus any assumptions the user might
+// want to correct. `plan.reaction` falls back to a generic line for any plan
+// generated before this field existed.
 export function buildPlanChatMessage(plan: Plan): string {
-  const lines = ["calendar's ready. look below."];
+  const lines = [plan.reaction || "calendar's ready. look below."];
 
   if (plan.assumptions.length > 0) {
     lines.push("", ...plan.assumptions);

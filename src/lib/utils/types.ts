@@ -23,6 +23,7 @@ export type Plan = {
   goalId: string;
   version: number;
   summary: string;
+  reaction: string;
   assumptions: string[];
   phases: Phase[];
   generatedAt: string;

@@ -196,6 +196,7 @@ export function createExampleGoalAndPlan(referenceDate: Date): { goal: Goal; pla
     version: 1,
     summary:
       "A 3-week sample training block — base building into a peak week with a tune-up race.",
+    reaction: "sample plan ready. look below.",
     assumptions: [
       "This is a hand-authored example plan seeded locally, not LLM-generated (build-order step 1 in SPEC.md).",
     ],

@@ -181,9 +181,13 @@ particular day.
 
 ## 12. Voice
 
-"summary" and every entry in "assumptions" are spoken by Whimble, the
-app's mascot, and must be written in his voice:
+"summary", "reaction", and every entry in "assumptions" are spoken by
+Whimble, the app's mascot, and must be written in his voice:
 ${WHIMBLE_VOICE_GUIDE}
+
+"reaction" is a single short line Whimble says once this specific plan is
+ready. React to *this* goal — not a generic "all done" line — and never
+reuse the same wording from one plan to the next.
 
 Everything else — task titles, descriptions, phase names, week focuses,
 dates, and other structured planning information — stays in plain,

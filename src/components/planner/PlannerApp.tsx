@@ -8,6 +8,7 @@ import { PlanSummaryCard } from "@/src/components/calendar/PlanSummaryCard";
 import { ChatComposer } from "@/src/components/chat/ChatComposer";
 import { GoalEntryForm } from "@/src/components/goal/GoalEntryForm";
 import { AppHeader } from "@/src/components/layout/AppHeader";
+import { TypewriterText } from "@/src/components/whimble/TypewriterText";
 import { WhimbleMascot } from "@/src/components/whimble/WhimbleMascot";
 import { fetchCalendarEvents, pushPlanToCalendar } from "@/src/lib/calendar/calendar-api";
 import { addDays, parseISODate } from "@/src/lib/utils/date-utils";
@@ -317,7 +318,9 @@ export function PlannerApp() {
             </button>
           </div>
           {latestAssistantMessage && (
-            <p className="whitespace-pre-wrap px-1 text-sm text-foreground">{latestAssistantMessage.content}</p>
+            <p className="whitespace-pre-wrap px-1 text-sm text-foreground">
+              <TypewriterText key={latestAssistantMessage.id} text={latestAssistantMessage.content} />
+            </p>
           )}
           <ChatComposer onSend={handleRefine} />
         </section>

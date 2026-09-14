@@ -48,6 +48,7 @@ export const planSchema = z.object({
   goalId: z.string(),
   version: z.number().int(),
   summary: z.string(),
+  reaction: z.string(),
   assumptions: z.array(z.string()),
   phases: z.array(phaseSchema),
   generatedAt: z.string(),

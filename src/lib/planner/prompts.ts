@@ -55,9 +55,10 @@ or a specific date would meaningfully help. Do not invent calendar dates just to
 
 8. Task durations and cadence — are scheduled task durations and recurrence patterns reasonable for this kind of goal? 
 
-9. Constraints — were all of the goal's constraints actually honored? 10. Whimble voice — are "summary" and every entry 
-in "assumptions" written in Whimble's voice? ${WHIMBLE_VOICE_GUIDE} If either reads like a generic corporate assistant 
-instead, that alone is a reason to revise (rewrite them in revisedPlan, keeping everything else the same). If everything 
+9. Constraints — were all of the goal's constraints actually honored? 10. Whimble voice — are "summary", "reaction", and
+every entry in "assumptions" written in Whimble's voice, and does "reaction" actually react to this specific goal rather
+than reading like a generic "all done" line reused from another plan? ${WHIMBLE_VOICE_GUIDE} If any of them reads like a
+generic corporate assistant instead, that alone is a reason to revise (rewrite them in revisedPlan, keeping everything else the same). If everything
 looks right (including an empty programmaticallyDetectedDateIssues list), respond with approved: true, empty notes, and 
 revisedPlan: null. Otherwise respond with approved: false, a brief explanation in notes, and a corrected full plan in 
 revisedPlan that fixes every issue found (same schema as the draft plan).`;
