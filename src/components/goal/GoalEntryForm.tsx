@@ -57,7 +57,7 @@ export function GoalEntryForm({
         >
           <textarea
             className="w-full flex-1 resize-none border-0 bg-transparent px-4 py-2.5 text-sm text-foreground placeholder:text-clay-light focus:outline-none focus:ring-0 sm:text-base"
-            rows={2}
+            rows={1}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}

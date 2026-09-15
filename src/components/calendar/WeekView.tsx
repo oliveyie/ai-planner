@@ -87,9 +87,10 @@ function DroppableDayColumn({
               compact
               draggableId={`cal:${entry.task.id}`}
               onClick={onSelectTask}
+              className="h-full w-full"
             />
           ) : (
-            <BusyBlockChip block={entry.block} compact onClick={onSelectBusyBlock} />
+            <BusyBlockChip block={entry.block} compact onClick={onSelectBusyBlock} className="h-full w-full" />
           )}
         </div>
       ))}

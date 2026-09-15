@@ -48,20 +48,20 @@ export function ChatComposer({
       >
         <textarea
           className="flex-1 resize-none border-0 bg-transparent px-3 py-2 text-sm text-foreground placeholder:text-clay-light focus:outline-none focus:ring-0"
-          rows={2}
+          rows={1}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="tell whimble what did bad…"
           disabled={submitting}
         />
-        <button
+        {message.trim() && (<button
           type="submit"
           disabled={submitting || !message.trim()}
           className="whitespace-nowrap rounded-full bg-coral px-5 py-2.5 text-sm font-bold text-white shadow-[0_4px_16px_rgba(249,124,86,0.3)] transition-all hover:bg-[#e86b45] active:scale-95 disabled:opacity-50"
         >
-          bean fix
-        </button>
+          send to whimble
+        </button>)}
       </form>
       {submitting && <p className="text-sm text-clay">whimble fixing plan…</p>}
       {error && <p className="text-sm text-peach-dark">{error}</p>}

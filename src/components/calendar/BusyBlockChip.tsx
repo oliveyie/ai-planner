@@ -10,10 +10,12 @@ export function BusyBlockChip({
   block,
   compact = false,
   onClick,
+  className = "",
 }: {
   block: BusyBlock;
   compact?: boolean;
   onClick?: (block: BusyBlock) => void;
+  className?: string;
 }) {
   const start = new Date(block.start);
   const end = new Date(block.end);
@@ -21,7 +23,7 @@ export function BusyBlockChip({
 
   return (
     <div
-      className={`rounded-lg border border-dashed border-clay-light/40 bg-surface-low/60 px-1.5 py-1 text-[11px] text-clay ${onClick ? "cursor-pointer" : ""}`}
+      className={`rounded-lg border border-dashed border-clay-light/40 bg-surface-low/60 px-1.5 py-1 text-[11px] text-clay ${onClick ? "cursor-pointer" : ""} ${className}`}
       style={{ borderLeftWidth: 3, borderLeftColor: block.color, borderLeftStyle: "solid" }}
       title={block.calendarName}
       onClick={onClick ? () => onClick(block) : undefined}

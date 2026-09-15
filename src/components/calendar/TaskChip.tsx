@@ -10,16 +10,13 @@ export function TaskChip({
   compact = false,
   onClick,
   draggableId,
+  className = "",
 }: {
   task: Task;
   compact?: boolean;
   onClick?: (task: Task) => void;
-  // Passed only by WeekView (the sole view with drag-to-reschedule) — its
-  // presence both enables the drag listeners below and gives the drag a
-  // distinct id (e.g. "cal:<taskId>") so it doesn't collide with the plan
-  // card's own useDraggable on the plain task id, which can be mounted at
-  // the same time.
   draggableId?: string;
+  className?: string;
 }) {
   // Always called (rules of hooks) — the listeners are simply left off the
   // DOM node below when draggableId isn't provided, so it stays inert.
@@ -59,7 +56,7 @@ export function TaskChip({
         draft ? PLAN_TASK_CHIP_DRAFT_CLASS : PLAN_TASK_CHIP_SYNCED_CLASS
       } ${conflict ? "border-dashed opacity-70" : ""} ${onClick ? "cursor-pointer" : ""} ${
         draggableId ? "touch-none cursor-grab active:cursor-grabbing" : ""
-      }`}
+      } ${className}`}
     >
       <div className="truncate">{task.title}</div>
       {!compact && time && <div className="font-medium opacity-70">{time}</div>}
