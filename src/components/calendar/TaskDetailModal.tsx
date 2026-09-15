@@ -8,7 +8,7 @@ import type { Task } from "@/src/lib/utils/types";
 import { TaskEditFields } from "./TaskEditFields";
 
 // Opened by clicking a task chip anywhere on the calendar (WeekView, MonthView,
-// AgendaList) — same save/delete contract as EditableTaskRow (the plan
+// the Agenda tab) — same save/delete contract as EditableTaskRow (the plan
 // card's inline editor), just presented as a modal instead of a list row, so
 // clicking a task on the calendar itself gives the same editing power without
 // having to go find it in the plan card.

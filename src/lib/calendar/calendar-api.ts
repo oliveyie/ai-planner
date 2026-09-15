@@ -7,7 +7,9 @@ import { getCalendarConnection, saveCalendarConnection } from "../db/db";
 import { mapPlanTasks } from "../utils/plan-utils";
 import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, Plan, Task } from "../utils/types";
 
-async function ensureValidAccessToken(connection: CalendarConnection): Promise<CalendarConnection> {
+// Exported for google-tasks-api.ts, which needs the same "refresh if
+// expiring soon" logic against the same stored connection.
+export async function ensureValidAccessToken(connection: CalendarConnection): Promise<CalendarConnection> {
   const stillValid = new Date(connection.expiresAt).getTime() > Date.now() + 60_000;
   if (stillValid || !connection.refreshToken) {
     return connection;

@@ -1,3 +1,4 @@
+import { PLAN_FILTER_ID } from "@/src/lib/utils/plan-utils";
 import { PLAN_TASK_COLOR } from "@/src/lib/utils/task-colors";
 import type { BusyBlock } from "@/src/lib/utils/types";
 
@@ -5,14 +6,22 @@ import type { BusyBlock } from "@/src/lib/utils/types";
 // calendar currently contributing events, using each calendar's own real
 // color (SPEC.md-adjacent: this is display-only, never fed into generation).
 // `showPlan` adds a leading "Plan" entry for the single unified color every
-// plan task renders in (see PLAN_TASK_COLOR) — only passed by CalendarShell,
-// which is the only screen that ever has a real plan to show.
+// plan task renders in (see PLAN_TASK_COLOR) — only passed where a real plan
+// exists to show (CalendarShell, not the pre-goal EmptyCalendarPreview).
+//
+// Clicking an entry isolates it (the caller filters every view down to just
+// that source via plan-utils.ts's applyLegendFilter); clicking the
+// already-active one clears the filter.
 export function CalendarLegend({
   busyBlocks,
   showPlan = false,
+  activeFilter = null,
+  onToggleFilter,
 }: {
   busyBlocks: BusyBlock[];
   showPlan?: boolean;
+  activeFilter?: string | null;
+  onToggleFilter?: (id: string) => void;
 }) {
   const seen = new Map<string, { name: string; color: string }>();
   for (const block of busyBlocks) {
@@ -24,19 +33,30 @@ export function CalendarLegend({
 
   if (!showPlan && calendars.length === 0) return null;
 
+  function entryClassName(id: string) {
+    const dimmed = activeFilter !== null && activeFilter !== id;
+    return `flex items-center gap-1.5 rounded-full px-1.5 py-0.5 transition-opacity ${
+      onToggleFilter ? "cursor-pointer hover:bg-surface-low" : ""
+    } ${dimmed ? "opacity-40" : ""}`;
+  }
+
   return (
-    <div className="flex flex-wrap items-center gap-3 text-xs font-medium text-clay">
+    <div className="flex flex-wrap items-center gap-1 text-xs font-medium text-clay">
       {showPlan && (
-        <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => onToggleFilter?.(PLAN_FILTER_ID)}
+          className={entryClassName(PLAN_FILTER_ID)}
+        >
           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: PLAN_TASK_COLOR }} />
           <span>Plan</span>
-        </div>
+        </button>
       )}
       {calendars.map(([id, cal]) => (
-        <div key={id} className="flex items-center gap-1.5">
+        <button type="button" key={id} onClick={() => onToggleFilter?.(id)} className={entryClassName(id)}>
           <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: cal.color }} />
           <span>{cal.name}</span>
-        </div>
+        </button>
       ))}
     </div>
   );

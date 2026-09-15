@@ -106,6 +106,7 @@ export function WeekView({
   onSelectBusyBlock,
   pxPerHour = DEFAULT_PX_PER_HOUR,
   maxHeightClassName = "max-h-[32rem]",
+  days: daysOverride,
 }: {
   anchorDate: Date;
   tasksByDate?: Map<string, Task[]>;
@@ -116,9 +117,14 @@ export function WeekView({
   // grid instead of just a bigger empty frame around the same-size content.
   pxPerHour?: number;
   maxHeightClassName?: string;
+  // Overrides the computed 7-day week — the Agenda tab reuses this whole
+  // component as a single-day time grid by passing days={[anchorDate]},
+  // rather than duplicating all of this grid/drag/click logic for one column.
+  days?: Date[];
 }) {
   const weekStart = startOfWeek(anchorDate);
-  const days = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const days = daysOverride ?? Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const gridTemplateColumns = `2.75rem repeat(${days.length}, 1fr)`;
   const today = new Date();
 
   const unscheduledTasks: Task[] = [];
@@ -175,7 +181,7 @@ export function WeekView({
         </div>
       )}
 
-      <div className="grid grid-cols-[2.75rem_repeat(7,1fr)] gap-1.5 sm:gap-2">
+      <div className="grid gap-1.5 sm:gap-2" style={{ gridTemplateColumns }}>
         <div />
         {days.map((day) => {
           const isToday = isSameDay(day, today);
@@ -193,7 +199,7 @@ export function WeekView({
       </div>
 
       <div className={`${maxHeightClassName} overflow-y-auto rounded-2xl border border-[#EDE2D4]/50 bg-surface-low/20`}>
-        <div className="grid grid-cols-[2.75rem_repeat(7,1fr)] gap-1.5 p-1 sm:gap-2" style={{ height: gridHeight }}>
+        <div className="grid gap-1.5 p-1 sm:gap-2" style={{ height: gridHeight, gridTemplateColumns }}>
           <div className="relative">
             {hours.map((hour) => (
               <div

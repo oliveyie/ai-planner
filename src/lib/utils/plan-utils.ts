@@ -113,3 +113,29 @@ export function groupBusyBlocksByDate(blocks: BusyBlock[]): Map<string, BusyBloc
   }
   return map;
 }
+
+// The id CalendarLegend/applyLegendFilter use for the "Plan" entry — not a
+// real calendarId (plan tasks aren't tied to a synced calendar), so it needs
+// a value no real calendarId could collide with.
+export const PLAN_FILTER_ID = "__plan__";
+
+// Shared by CalendarShell and EmptyCalendarPreview, both of which let a
+// legend click isolate one source (PLAN_FILTER_ID or a calendarId) — null
+// shows everything. Clearing plan tasks vs. busy blocks entirely (rather
+// than e.g. filtering tasksByDate down to nothing) keeps this cheap and
+// obviously correct: a filtered-out source just never enters the maps below.
+export function applyLegendFilter(
+  tasksByDate: Map<string, Task[]>,
+  busyBlocksByDate: Map<string, BusyBlock[]>,
+  activeFilter: string | null,
+): { tasksByDate: Map<string, Task[]>; busyBlocksByDate: Map<string, BusyBlock[]> } {
+  if (activeFilter === null) return { tasksByDate, busyBlocksByDate };
+  if (activeFilter === PLAN_FILTER_ID) return { tasksByDate, busyBlocksByDate: new Map() };
+
+  const filteredBusyBlocksByDate = new Map<string, BusyBlock[]>();
+  for (const [date, blocks] of busyBlocksByDate) {
+    const matching = blocks.filter((block) => block.calendarId === activeFilter);
+    if (matching.length > 0) filteredBusyBlocksByDate.set(date, matching);
+  }
+  return { tasksByDate: new Map(), busyBlocksByDate: filteredBusyBlocksByDate };
+}

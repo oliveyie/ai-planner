@@ -60,10 +60,10 @@ function DroppableMonthCell({
       )}
       <div className="flex flex-col gap-1">
         {busyBlocks.map((block, i) => (
-          <BusyBlockChip key={`busy-${i}`} block={block} compact onClick={onSelectBusyBlock} />
+          <BusyBlockChip key={`busy-${i}`} block={block} onClick={onSelectBusyBlock} />
         ))}
         {visible.map((task) => (
-          <TaskChip key={task.id} task={task} compact draggableId={`cal:${task.id}`} onClick={onSelectTask} />
+          <TaskChip key={task.id} task={task} draggableId={`cal:${task.id}`} onClick={onSelectTask} />
         ))}
         {overflow > 0 && <div className="text-[10px] font-semibold text-clay-light">+{overflow} more</div>}
       </div>

@@ -97,6 +97,18 @@ export type BusyBlock = {
   color: string; // hex — the user's own color for that calendar where the provider exposes one, else a deterministic fallback
 };
 
+// A Google Tasks item (Agenda tab's todo-list sidebar) — a separate API from
+// Google Calendar, requiring its own OAuth scope (see oauth-providers.ts).
+// Only fetched/shown for the "@default" task list; not persisted locally,
+// always fetched fresh.
+export type GoogleTask = {
+  id: string;
+  title: string;
+  notes?: string;
+  due?: string; // ISO date, if the task has one
+  completed: boolean;
+};
+
 export type ChatMessage = {
   id: string;
   goalId: string;

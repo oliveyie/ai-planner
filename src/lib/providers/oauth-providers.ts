@@ -38,9 +38,11 @@ export function getProviderConfig(provider: CalendarProvider): ProviderConfig {
       // Full access, not calendar.readonly: pushing a plan creates a
       // dedicated calendar, which read-only access can't do. `openid email
       // profile` is only for reading the user's display name (AppHeader) —
-      // never used for auth/identity. Anyone who connected before this
-      // widened needs to reconnect (SPEC.md §7).
-      scope: "https://www.googleapis.com/auth/calendar openid email profile",
+      // never used for auth/identity. `tasks` (full, not tasks.readonly)
+      // powers the Agenda tab's todo list, including checking a task off.
+      // Anyone who connected before this widened needs to reconnect
+      // (SPEC.md §7).
+      scope: "https://www.googleapis.com/auth/calendar https://www.googleapis.com/auth/tasks openid email profile",
       clientId: requireEnv("GOOGLE_CLIENT_ID"),
       clientSecret: requireEnv("GOOGLE_CLIENT_SECRET"),
       // Google only returns a refresh_token on first consent unless forced.

@@ -14,6 +14,7 @@ import { AppHeader } from "@/src/components/layout/AppHeader";
 import { TypewriterText } from "@/src/components/whimble/TypewriterText";
 import { WhimbleMascot } from "@/src/components/whimble/WhimbleMascot";
 import { fetchCalendarEvents, pushPlanToCalendar } from "@/src/lib/calendar/calendar-api";
+import { fetchGoogleTasks, setGoogleTaskCompleted } from "@/src/lib/calendar/google-tasks-api";
 import { addDays, parseISODate, parseISODateTime, toISODateTime } from "@/src/lib/utils/date-utils";
 import {
   deleteCalendarConnection,
@@ -40,6 +41,7 @@ import type {
   CalendarProvider,
   ChatMessage,
   Goal,
+  GoogleTask,
   Plan,
   Task,
 } from "@/src/lib/utils/types";
@@ -85,9 +87,15 @@ export function PlannerApp() {
   const [connectError, setConnectError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   // Set by clicking a task/busy block chip anywhere on the calendar
-  // (WeekView/MonthView/AgendaList) — opens TaskDetailModal/BusyBlockDetailModal.
+  // (WeekView/MonthView/the Agenda tab) — opens TaskDetailModal/BusyBlockDetailModal.
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [selectedBusyBlock, setSelectedBusyBlock] = useState<BusyBlock | null>(null);
+  // The Agenda tab's todo-list sidebar (Google Tasks — a separate API/scope
+  // from Google Calendar). Fetched once a Google connection exists,
+  // independent of whether a goal/plan exists yet, since tasks aren't tied
+  // to a specific goal.
+  const [googleTasks, setGoogleTasks] = useState<GoogleTask[]>([]);
+  const [googleTasksError, setGoogleTasksError] = useState(false);
   const initialized = useRef(false);
   // 8px activation distance so a plain click (open a task's edit mode) still
   // works — dnd-kit only treats it as a drag once the pointer actually moves.
@@ -141,6 +149,16 @@ export function PlannerApp() {
           ? parseISODate(activeGoal.targetDate)
           : addDays(new Date(), DEFAULT_HORIZON_DAYS);
         setBusyBlocks(await fetchCalendarEvents(horizonStart, horizonEnd));
+      }
+
+      if (allConnections.some((c) => c.provider === "google")) {
+        try {
+          setGoogleTasks(await fetchGoogleTasks());
+        } catch {
+          // Most likely an existing connection that hasn't granted the
+          // tasks scope yet — TodoList surfaces a "reconnect" hint for this.
+          setGoogleTasksError(true);
+        }
       }
 
       setGoal(activeGoal ?? null);
@@ -441,6 +459,14 @@ export function PlannerApp() {
     setPlan(updatedPlan);
   }
 
+  // Optimistic: this todo list only ever fetches incomplete tasks, so
+  // checking one off just removes it locally rather than waiting on the
+  // network round-trip; the actual PATCH runs in the background.
+  function handleToggleGoogleTask(taskId: string) {
+    setGoogleTasks((prev) => prev.filter((t) => t.id !== taskId));
+    setGoogleTaskCompleted(taskId, true).catch(() => {});
+  }
+
   if (loading) {
     return (
       <>
@@ -467,10 +493,21 @@ export function PlannerApp() {
           <GoalEntryForm onSubmit={handleCreateGoal} />
 
           <main className="relative overflow-hidden rounded-[2.5rem] border border-[#f0e8dc] bg-surface-card/95 p-6 shadow-[0_8px_32px_-4px_rgba(184,150,120,0.08),0_2px_8px_-1px_rgba(184,150,120,0.04)] sm:p-8">
-            <EmptyCalendarPreview dimmed={showConnectModal} connections={connections} />
+            <EmptyCalendarPreview
+              dimmed={showConnectModal}
+              connections={connections}
+              googleTasks={googleTasks}
+              googleTasksError={googleTasksError}
+              onSelectBusyBlock={setSelectedBusyBlock}
+              onToggleGoogleTask={handleToggleGoogleTask}
+            />
             {showConnectModal && <ConnectCalendarScreen onSkip={handleSkipConnect} />}
           </main>
         </div>
+
+        {selectedBusyBlock && (
+          <BusyBlockDetailModal block={selectedBusyBlock} onClose={() => setSelectedBusyBlock(null)} />
+        )}
       </>
     );
   }
@@ -524,9 +561,12 @@ export function PlannerApp() {
                 plan={plan}
                 busyBlocks={busyBlocks}
                 connections={connections}
+                googleTasks={googleTasks}
+                googleTasksError={googleTasksError}
                 onPush={handlePush}
                 onSelectTask={(task) => setSelectedTaskId(task.id)}
                 onSelectBusyBlock={setSelectedBusyBlock}
+                onToggleGoogleTask={handleToggleGoogleTask}
                 hideHeader
               />
             </div>

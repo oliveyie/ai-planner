@@ -55,8 +55,9 @@ export function startOfMonth(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), 1);
 }
 
+// The Agenda tab's nav header label, e.g. "Wed, Sep 16, 2026".
 export function formatDayLabel(date: Date): string {
-  return date.toLocaleDateString(undefined, { weekday: "short", day: "numeric" });
+  return date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric", year: "numeric" });
 }
 
 export function formatMonthLabel(date: Date): string {

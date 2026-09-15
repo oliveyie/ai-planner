@@ -2,14 +2,14 @@
 
 import { useState } from "react";
 import { Modal } from "@/src/components/ui/Modal";
-import { addDays, addMonths, formatMonthLabel, formatWeekRangeLabel } from "@/src/lib/utils/date-utils";
-import { flattenTasks, groupBusyBlocksByDate, groupTasksByDate } from "@/src/lib/utils/plan-utils";
+import { addDays, addMonths, formatDayLabel, formatMonthLabel, formatWeekRangeLabel } from "@/src/lib/utils/date-utils";
+import { applyLegendFilter, flattenTasks, groupBusyBlocksByDate, groupTasksByDate } from "@/src/lib/utils/plan-utils";
 import { CALENDAR_PROVIDER_LABELS } from "@/src/lib/providers/provider-labels";
-import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, Plan, Task } from "@/src/lib/utils/types";
-import { AgendaList } from "./AgendaList";
+import type { BusyBlock, CalendarConnection, CalendarProvider, Goal, GoogleTask, Plan, Task } from "@/src/lib/utils/types";
 import { CalendarLegend } from "./CalendarLegend";
 import { MonthView } from "./MonthView";
 import { PushControls } from "./PushControls";
+import { TodoList } from "./TodoList";
 import { WeekView } from "./WeekView";
 
 type ViewMode = "week" | "month" | "agenda";
@@ -25,20 +25,26 @@ export function CalendarShell({
   plan,
   busyBlocks = [],
   connections = [],
+  googleTasks = [],
+  googleTasksError = false,
   onNewGoal,
   onPush,
   onSelectTask,
   onSelectBusyBlock,
+  onToggleGoogleTask,
   hideHeader = false,
 }: {
   goal: Goal;
   plan: Plan;
   busyBlocks?: BusyBlock[];
   connections?: CalendarConnection[];
+  googleTasks?: GoogleTask[];
+  googleTasksError?: boolean;
   onNewGoal?: () => void;
   onPush?: (provider: CalendarProvider) => Promise<void>;
   onSelectTask?: (task: Task) => void;
   onSelectBusyBlock?: (block: BusyBlock) => void;
+  onToggleGoogleTask?: (taskId: string) => void;
   hideHeader?: boolean;
 }) {
   const [view, setView] = useState<ViewMode>("week");
@@ -48,26 +54,38 @@ export function CalendarShell({
   // the default Week view stranded on the plan's start week — Month view
   // masked this by coincidence (still the current month) while Week didn't.
   const [anchorDate, setAnchorDate] = useState<Date>(() => new Date());
+  const [activeFilter, setActiveFilter] = useState<string | null>(null);
 
-  const tasksByDate = groupTasksByDate(flattenTasks(plan));
-  const busyBlocksByDate = groupBusyBlocksByDate(busyBlocks);
+  const { tasksByDate, busyBlocksByDate } = applyLegendFilter(
+    groupTasksByDate(flattenTasks(plan)),
+    groupBusyBlocksByDate(busyBlocks),
+    activeFilter,
+  );
+
+  function toggleFilter(id: string) {
+    setActiveFilter((current) => (current === id ? null : id));
+  }
 
   const label =
     view === "month"
       ? formatMonthLabel(anchorDate)
       : view === "week"
         ? formatWeekRangeLabel(anchorDate)
-        : "All tasks";
+        : formatDayLabel(anchorDate);
 
   function shift(direction: 1 | -1) {
-    setAnchorDate((current) =>
-      view === "month" ? addMonths(current, direction) : addDays(current, direction * 7),
-    );
+    setAnchorDate((current) => {
+      if (view === "month") return addMonths(current, direction);
+      if (view === "week") return addDays(current, direction * 7);
+      return addDays(current, direction);
+    });
   }
 
   function goToToday() {
     setAnchorDate(new Date());
   }
+
+  const googleConnected = connections.some((c) => c.provider === "google");
 
   // Shared between the normal-size card and the expanded modal — only the
   // view's own grid density/height changes between them (bigExpanded).
@@ -96,13 +114,28 @@ export function CalendarShell({
         />
       );
     }
+    // Agenda: a single-day time grid (WeekView reused with a 1-day "days"
+    // override, rather than a separate flat multi-date list) plus Google
+    // Tasks as a todo-list sidebar.
     return (
-      <AgendaList
-        tasksByDate={tasksByDate}
-        busyBlocksByDate={busyBlocksByDate}
-        onSelectTask={onSelectTask}
-        onSelectBusyBlock={onSelectBusyBlock}
-      />
+      <div className="grid grid-cols-1 gap-3 lg:grid-cols-[1fr_220px]">
+        <WeekView
+          anchorDate={anchorDate}
+          days={[anchorDate]}
+          tasksByDate={tasksByDate}
+          busyBlocksByDate={busyBlocksByDate}
+          onSelectTask={onSelectTask}
+          onSelectBusyBlock={onSelectBusyBlock}
+          pxPerHour={bigExpanded ? EXPANDED_PX_PER_HOUR : undefined}
+          maxHeightClassName={bigExpanded ? "max-h-[65vh]" : undefined}
+        />
+        <TodoList
+          tasks={googleTasks}
+          connected={googleConnected}
+          error={googleTasksError}
+          onToggleComplete={(taskId) => onToggleGoogleTask?.(taskId)}
+        />
+      </div>
     );
   }
 
@@ -110,26 +143,23 @@ export function CalendarShell({
     <div className="flex flex-wrap items-center gap-2.5 px-2">
       <button
         onClick={goToToday}
-        disabled={view === "agenda"}
-        className="rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 text-xs font-bold text-clay shadow-sm transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
+        className="rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 text-xs font-bold text-clay shadow-sm transition-colors hover:bg-surface-low hover:text-foreground"
       >
         Today
       </button>
       <div className="flex items-center gap-2 rounded-full border border-[#EFE5D8] bg-surface-card px-3.5 py-1.5 shadow-sm">
         <button
           onClick={() => shift(-1)}
-          disabled={view === "agenda"}
           aria-label="Previous"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-clay transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-clay transition-colors hover:bg-surface-low hover:text-foreground"
         >
           ←
         </button>
         <span className="min-w-32 px-1 text-center text-sm font-bold text-foreground">{label}</span>
         <button
           onClick={() => shift(1)}
-          disabled={view === "agenda"}
           aria-label="Next"
-          className="flex h-6 w-6 items-center justify-center rounded-full text-clay transition-colors hover:bg-surface-low hover:text-foreground disabled:opacity-30"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-clay transition-colors hover:bg-surface-low hover:text-foreground"
         >
           →
         </button>
@@ -207,7 +237,7 @@ export function CalendarShell({
 
         {navControls}
 
-        <CalendarLegend busyBlocks={busyBlocks} showPlan />
+        <CalendarLegend busyBlocks={busyBlocks} showPlan activeFilter={activeFilter} onToggleFilter={toggleFilter} />
 
         {renderCalendarView(false)}
 
@@ -219,7 +249,7 @@ export function CalendarShell({
           <div className="flex flex-col gap-3">
             <h2 className="font-fraunces text-xl font-semibold tracking-tight text-foreground">{goal.title}</h2>
             {navControls}
-            <CalendarLegend busyBlocks={busyBlocks} showPlan />
+            <CalendarLegend busyBlocks={busyBlocks} showPlan activeFilter={activeFilter} onToggleFilter={toggleFilter} />
             {renderCalendarView(true)}
           </div>
         </Modal>
