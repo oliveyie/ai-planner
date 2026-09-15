@@ -458,7 +458,7 @@ export function PlannerApp() {
 
   return (
     <>
-      <AppHeader connections={connections} onDisconnect={handleDisconnect} />
+      <AppHeader connections={connections} onDisconnect={handleDisconnect} onNewGoal={handleNewGoal} />
       <div className="w-full max-w-6xl mx-auto flex flex-col gap-5 px-4 sm:px-6 pb-16">
         <header className="px-2 pt-2">
           <h1 className="font-fraunces text-xl font-semibold tracking-tight text-foreground">{goal.title}</h1>

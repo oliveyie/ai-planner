@@ -8,9 +8,11 @@ import type { CalendarConnection, CalendarProvider } from "@/src/lib/utils/types
 export function AppHeader({
   connections = [],
   onDisconnect,
+  onNewGoal,
 }: {
   connections?: CalendarConnection[];
   onDisconnect?: (provider: CalendarProvider) => void;
+  onNewGoal?: () => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -36,12 +38,29 @@ export function AppHeader({
     setMenuOpen(false);
   }
 
+  const brandMark = (
+    <>
+      <WhimbleMascot size="sm" />
+      <span className="font-fraunces font-semibold text-lg text-foreground tracking-tight">Whimble</span>
+    </>
+  );
+
   return (
     <header className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-3 px-6 py-5">
-      <div className="flex items-center gap-2.5 rounded-full border border-peach-dark/10 bg-surface-card px-3.5 py-1.5 shadow-sm">
-        <WhimbleMascot size="sm" />
-        <span className="font-fraunces font-semibold text-lg text-foreground tracking-tight">Whimble</span>
-      </div>
+      {onNewGoal ? (
+        <button
+          type="button"
+          onClick={onNewGoal}
+          title="Start a new whim"
+          className="flex items-center gap-2.5 rounded-full border border-peach-dark/10 bg-surface-card px-3.5 py-1.5 shadow-sm transition-colors hover:bg-surface-low"
+        >
+          {brandMark}
+        </button>
+      ) : (
+        <div className="flex items-center gap-2.5 rounded-full border border-peach-dark/10 bg-surface-card px-3.5 py-1.5 shadow-sm">
+          {brandMark}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         {connections.length === 0 && (
