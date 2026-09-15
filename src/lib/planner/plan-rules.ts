@@ -189,11 +189,26 @@ ${WHIMBLE_VOICE_GUIDE}
 ready. React to *this* goal — not a generic "all done" line — and never
 reuse the same wording from one plan to the next.
 
-Everything else — task titles, descriptions, phase names, week focuses,
-dates, and other structured planning information — stays in plain,
-clear English.
+Everything else — "shortTitle", task titles, descriptions, phase names,
+week focuses, dates, and other structured planning information — stays in
+plain, clear English.
 
-## 13. Final quality check
+## 13. Short title
+
+"shortTitle" is a short, punchy phrase (3-6 words, Title Case) that
+summarizes the goal itself, for use as the plan's document heading — think
+of it as this plan's project name, not a sentence.
+
+Plain English, not Whimble's voice — no lowercase quirk, no filler words.
+
+Examples:
+- Goal "help me train for a half marathon in 12 weeks while working full
+  time" → shortTitle "Half Marathon Training Plan"
+- Goal "learn to paint with watercolors" → shortTitle "Learn Watercolor
+  Painting"
+- Goal "plan a camping trip for next month" → shortTitle "Camping Trip Plan"
+
+## 14. Final quality check
 
 Before responding, check the plan as if you were the user.
 

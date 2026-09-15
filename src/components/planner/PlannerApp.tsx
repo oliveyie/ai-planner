@@ -1,6 +1,6 @@
 "use client";
 
-import { DndContext, PointerSensor, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
+import { DndContext, PointerSensor, pointerWithin, useSensor, useSensors, type DragEndEvent } from "@dnd-kit/core";
 import { useEffect, useRef, useState } from "react";
 import { BusyBlockDetailModal } from "@/src/components/calendar/BusyBlockDetailModal";
 import { CalendarShell } from "@/src/components/calendar/CalendarShell";
@@ -92,6 +92,22 @@ export function PlannerApp() {
   // 8px activation distance so a plain click (open a task's edit mode) still
   // works — dnd-kit only treats it as a drag once the pointer actually moves.
   const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
+
+  // Tracked independently of dnd-kit's own DragEndEvent.delta, which turned
+  // out to fold in autoscroll compensation (how far a scrolled container
+  // moved beneath the cursor) on top of raw pointer movement — using it to
+  // reconstruct "where the mouse actually is" overshot by however much the
+  // calendar's scrollable grid had autoscrolled during the drag. A plain
+  // window-level pointermove listener gives the real, always-accurate
+  // viewport position instead.
+  const lastPointerPosition = useRef({ x: 0, y: 0 });
+  useEffect(() => {
+    function handlePointerMove(e: PointerEvent) {
+      lastPointerPosition.current = { x: e.clientX, y: e.clientY };
+    }
+    window.addEventListener("pointermove", handlePointerMove);
+    return () => window.removeEventListener("pointermove", handlePointerMove);
+  }, []);
 
   useEffect(() => {
     // Ref guard, not a cancelled-flag/cleanup pair — see git history on
@@ -318,10 +334,15 @@ export function PlannerApp() {
       const dropData = over.data.current as
         | { date: string; rangeStartMinutes: number; pxPerMinute: number }
         | undefined;
-      const activeRect = active.rect.current.translated;
-      if (!dropData || !activeRect) return;
+      if (!dropData) return;
 
-      const offsetY = activeRect.top - over.rect.top;
+      // Use the actual cursor position (tracked independently, see
+      // lastPointerPosition above), not the dragged box's top edge —
+      // grabbing a task lower down in its box (or dragging a tall,
+      // multi-hour event) previously placed it at whatever time the box's
+      // top happened to land on, which didn't match where the mouse
+      // actually was.
+      const offsetY = lastPointerPosition.current.y - over.rect.top;
       const rawMinutes = dropData.rangeStartMinutes + offsetY / dropData.pxPerMinute;
       const snappedMinutes = Math.max(0, Math.round(rawMinutes / 15) * 15); // snap to a quarter hour
       const startTime = `${String(Math.floor(snappedMinutes / 60)).padStart(2, "0")}:${String(snappedMinutes % 60).padStart(2, "0")}`;
@@ -485,7 +506,14 @@ export function PlannerApp() {
           <ChatComposer onSend={handleRefine} />
         </section>
 
-        <DndContext sensors={dndSensors} onDragEnd={handleTaskDragEnd}>
+        {/* pointerWithin (not dnd-kit's default rectIntersection), which picks
+            the droppable whose rect contains the dragged box the most — for
+            a wide plan-card row dragged over narrow week/month calendar
+            columns, that often picked whichever column the box's LEFT edge
+            happened to overlap, not the one under the actual cursor.
+            pointerWithin instead picks whichever droppable the pointer
+            itself is currently inside, matching where the mouse is. */}
+        <DndContext sensors={dndSensors} collisionDetection={pointerWithin} onDragEnd={handleTaskDragEnd}>
           <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
             <div className="lg:col-span-5">
               <PlanSummaryCard goal={goal} plan={plan} onUpdatePlan={handleUpdatePlan} />

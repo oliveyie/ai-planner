@@ -22,6 +22,7 @@ export type Plan = {
   id: string;
   goalId: string;
   version: number;
+  shortTitle: string;
   summary: string;
   reaction: string;
   assumptions: string[];

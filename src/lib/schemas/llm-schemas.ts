@@ -38,6 +38,7 @@ export const llmPhaseSchema = z.object({
 });
 
 export const llmPlanSchema = z.object({
+  shortTitle: z.string(),
   summary: z.string(),
   reaction: z.string(),
   assumptions: z.array(z.string()),
@@ -106,6 +107,11 @@ const phaseJsonSchema = {
 export const planJsonSchema = {
   type: "object",
   properties: {
+    shortTitle: {
+      type: "string",
+      description:
+        "A short, punchy phrase (3-6 words, Title Case) summarizing the goal as a document heading — e.g. \"Marathon Training Plan\", \"Learn Watercolor Painting\". Plain English, NOT Whimble's voice.",
+    },
     summary: { type: "string", description: "In Whimble's voice — see the system prompt's voice guide." },
     reaction: {
       type: "string",
@@ -122,7 +128,7 @@ export const planJsonSchema = {
     },
     phases: { type: "array", items: phaseJsonSchema },
   },
-  required: ["summary", "reaction", "assumptions", "targetDate", "phases"],
+  required: ["shortTitle", "summary", "reaction", "assumptions", "targetDate", "phases"],
   additionalProperties: false,
 } as const;
 

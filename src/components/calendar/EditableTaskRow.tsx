@@ -3,7 +3,6 @@
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import { useState } from "react";
 import { formatTimeLabel, parseISODate, parseISODateTime } from "@/src/lib/utils/date-utils";
-import { TASK_TYPE_STYLES } from "@/src/lib/utils/task-colors";
 import type { Task } from "@/src/lib/utils/types";
 import { TaskEditFields } from "./TaskEditFields";
 
@@ -50,7 +49,6 @@ export function EditableTaskRow({
   const start = task.scheduledStart ? parseISODateTime(task.scheduledStart) : null;
   const end = task.scheduledEnd ? parseISODateTime(task.scheduledEnd) : null;
   const dayLabel = start ? WEEKDAY_SHORT[start.getDay()] : WEEKDAY_SHORT[parseISODate(task.preferredDate).getDay()];
-  const style = TASK_TYPE_STYLES[task.type];
 
   function handleDelete() {
     if (window.confirm(`Delete "${task.title}"? This can't be undone.`)) {
@@ -100,9 +98,6 @@ export function EditableTaskRow({
           </button>
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          <span className={`whitespace-nowrap rounded-full border px-2 py-0.5 text-[11px] font-bold ${style.chip}`}>
-            {style.label}
-          </span>
           <button
             type="button"
             onClick={handleDelete}

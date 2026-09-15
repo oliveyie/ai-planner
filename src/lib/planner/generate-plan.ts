@@ -230,6 +230,7 @@ function toLlmPhaseForPrompt(phase: Phase): LlmPhase {
 
 function toLlmPlanForPrompt(goal: GoalInput, plan: Plan): LlmPlan {
   return {
+    shortTitle: plan.shortTitle,
     summary: plan.summary,
     reaction: plan.reaction,
     assumptions: plan.assumptions,
@@ -290,6 +291,7 @@ async function critiqueAndFinalize(
     id: makeId("plan"),
     goalId: goal.id,
     version,
+    shortTitle: finalLlmPlan.shortTitle,
     summary: finalLlmPlan.summary,
     reaction: finalLlmPlan.reaction,
     assumptions: finalLlmPlan.assumptions,

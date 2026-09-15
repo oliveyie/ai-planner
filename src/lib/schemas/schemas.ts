@@ -49,6 +49,7 @@ export const planSchema = z.object({
   id: z.string(),
   goalId: z.string(),
   version: z.number().int(),
+  shortTitle: z.string(),
   summary: z.string(),
   reaction: z.string(),
   assumptions: z.array(z.string()),

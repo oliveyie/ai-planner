@@ -194,6 +194,7 @@ export function createExampleGoalAndPlan(referenceDate: Date): { goal: Goal; pla
     id: makeId("plan"),
     goalId,
     version: 1,
+    shortTitle: "Seattle Marathon Plan",
     summary:
       "A 3-week sample training block — base building into a peak week with a tune-up race.",
     reaction: "sample plan ready. look below.",

@@ -1,12 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { formatPhaseDateRange, toISODate } from "@/src/lib/utils/date-utils";
+import { formatPhaseDateRange } from "@/src/lib/utils/date-utils";
 import { flattenTasks, mapPlanTasks, removeTaskFromPlan, taskSortKey } from "@/src/lib/utils/plan-utils";
 import type { Goal, Plan, Task } from "@/src/lib/utils/types";
 import { EditableTaskRow } from "./EditableTaskRow";
-
-const WEEKDAY_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
 // Ported from the Stitch "Cheeky Plan Draft & Calendar Split View" screen —
 // the left-hand "My Plan" card. Tasks are grouped under their own phase
@@ -31,18 +29,7 @@ export function PlanSummaryCard({
   const totalWeeks = plan.phases.reduce((sum, phase) => sum + phase.weeks.length, 0);
   const avgPerWeek = totalWeeks > 0 ? Math.max(1, Math.round(activeTasks.length / totalWeeks)) : activeTasks.length;
 
-  const todayKey = toISODate(new Date());
-
-  const restDayNames = Array.from(
-    new Set(
-      allTasks
-        .filter((t) => t.type === "rest" && t.preferredDaysOfWeek)
-        .flatMap((t) => t.preferredDaysOfWeek ?? [])
-        .map((d) => WEEKDAY_SHORT[d]),
-    ),
-  );
-
-  const currentPhase = plan.phases.find((phase) => phase.startDate <= todayKey && phase.endDate >= todayKey);
+  const title = plan.shortTitle || goal.title;
 
   function handleSaveTask(updatedTask: Task) {
     onUpdatePlan(mapPlanTasks(plan, new Map([[updatedTask.id, updatedTask]])));
@@ -53,80 +40,60 @@ export function PlanSummaryCard({
   }
 
   const content = (
-    <>
-      <div>
-        <div className="mb-3 flex flex-wrap items-center gap-2">
-          <span className="rounded-full border border-coral/30 bg-peach px-2.5 py-1 text-xs font-bold text-peach-dark">
-            {currentPhase?.name ?? plan.phases[0]?.name ?? "Your Plan"}
-          </span>
-          <span className="rounded-full border border-sage-dark/20 bg-sage px-2.5 py-1 text-xs font-bold text-sage-dark">
-            {scheduledCount}/{activeTasks.length} Slots Set
-          </span>
-        </div>
+    <div>
+      <h2 className="font-fraunces text-2xl font-semibold tracking-tight text-foreground">{title}</h2>
+      <p className="mt-1 text-xs text-clay">
+        {totalWeeks} week{totalWeeks === 1 ? "" : "s"} • ~{avgPerWeek} session{avgPerWeek === 1 ? "" : "s"} a week •{" "}
 
-        <h2 className="font-fraunces text-2xl font-semibold tracking-tight text-foreground">{goal.title}</h2>
-        <p className="mt-1 text-xs text-clay">
-          {totalWeeks} week{totalWeeks === 1 ? "" : "s"} • ~{avgPerWeek} session{avgPerWeek === 1 ? "" : "s"} a week
-        </p>
-
-        <p className="mt-3 text-sm font-medium text-foreground">{plan.summary}</p>
-
-        <div className="mt-4 flex flex-col gap-5">
-          {activeTasks.length === 0 && (
-            <p className="rounded-2xl border border-dashed border-[#EDE2D4] px-3.5 py-4 text-center font-fraunces text-sm text-clay-light">
-              all done. nice work.
-            </p>
-          )}
-          {plan.phases.map((phase) => {
-            const phaseTasks = phase.weeks
-              .flatMap((week) => week.tasks)
-              .filter((t) => t.type !== "rest")
-              .sort((a, b) => taskSortKey(a).localeCompare(taskSortKey(b)));
-
-            if (phaseTasks.length === 0) return null;
-
-            return (
-              <div key={phase.id} className="flex flex-col gap-2.5">
-                <div className="flex flex-col gap-0.5">
-                  <h3 className="text-sm font-bold text-foreground">{phase.name}</h3>
-                  <span className="text-xs text-clay-light">
-                    {formatPhaseDateRange(phase.startDate, phase.endDate, phase.weeks.length)}
-                  </span>
-                </div>
-                <div className="flex flex-col gap-2">
-                  {phaseTasks.map((task) => (
-                    // Stops the click from bubbling up to the card's own
-                    // expand-on-click handler — a task click should edit
-                    // that task, not also pop the whole card open.
-                    <div key={task.id} onClick={(e) => e.stopPropagation()}>
-                      <EditableTaskRow task={task} onSave={handleSaveTask} onDelete={handleDeleteTask} />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      <div className="flex items-center gap-2 border-t border-[#EDE2D4]/70 pt-3 text-xs text-clay">
-        <span className="shrink-0 text-sage-dark">✿</span>
-        {restDayNames.length > 0 ? (
-          <span>
-            rest day <strong className="text-foreground">{restDayNames.join(", ")}</strong>. whimble protects these.
-          </span>
-        ) : (
-          <span>plenty of rest built in between.</span>
+        <span className="rounded-full border border-sage-dark/20 bg-sage px-2.5 py-1 text-xs font-bold text-sage-dark">
+          {scheduledCount}/{activeTasks.length} Tasks Set
+        </span>
+      </p>
+      
+      <div className="mt-4 flex flex-col gap-5">
+        {activeTasks.length === 0 && (
+          <p className="rounded-2xl border border-dashed border-[#EDE2D4] px-3.5 py-4 text-center font-fraunces text-sm text-clay-light">
+            all done. nice work.
+          </p>
         )}
+        {plan.phases.map((phase) => {
+          const phaseTasks = phase.weeks
+            .flatMap((week) => week.tasks)
+            .filter((t) => t.type !== "rest")
+            .sort((a, b) => taskSortKey(a).localeCompare(taskSortKey(b)));
+
+          if (phaseTasks.length === 0) return null;
+
+          return (
+            <div key={phase.id} className="flex flex-col gap-2.5">
+              <div className="flex flex-col gap-0.5">
+                <h3 className="text-sm font-bold text-foreground">{phase.name}</h3>
+                <span className="text-xs text-clay-light">
+                  {formatPhaseDateRange(phase.startDate, phase.endDate, phase.weeks.length)}
+                </span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {phaseTasks.map((task) => (
+                  // Stops the click from bubbling up to the card's own
+                  // expand-on-click handler — a task click should edit
+                  // that task, not also pop the whole card open.
+                  <div key={task.id} onClick={(e) => e.stopPropagation()}>
+                    <EditableTaskRow task={task} onSave={handleSaveTask} onDelete={handleDeleteTask} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
       </div>
-    </>
+    </div>
   );
 
   return (
     <>
       <div
         onClick={() => setExpanded(true)}
-        className="flex h-full cursor-pointer flex-col justify-between gap-4 rounded-3xl border border-[#EFE5D8] bg-surface-card/95 p-5 shadow-[0_6px_24px_rgba(215,190,170,0.06)] transition-shadow hover:shadow-[0_10px_32px_rgba(215,190,170,0.14)] sm:p-6"
+        className="flex h-full cursor-pointer flex-col gap-4 rounded-3xl border border-[#EFE5D8] bg-surface-card/95 p-5 shadow-[0_6px_24px_rgba(215,190,170,0.06)] transition-shadow hover:shadow-[0_10px_32px_rgba(215,190,170,0.14)] sm:p-6"
       >
         {content}
       </div>

@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Modal } from "@/src/components/ui/Modal";
 import { CALENDAR_PROVIDER_NAMES } from "@/src/lib/providers/provider-labels";
 import { formatTimeLabel, parseISODate, parseISODateTime } from "@/src/lib/utils/date-utils";
-import { TASK_TYPE_STYLES } from "@/src/lib/utils/task-colors";
 import type { Task } from "@/src/lib/utils/types";
 import { TaskEditFields } from "./TaskEditFields";
 
@@ -28,7 +27,6 @@ export function TaskDetailModal({
 
   const start = task.scheduledStart ? parseISODateTime(task.scheduledStart) : null;
   const end = task.scheduledEnd ? parseISODateTime(task.scheduledEnd) : null;
-  const style = TASK_TYPE_STYLES[task.type];
 
   function handleDelete() {
     if (window.confirm(`Delete "${task.title}"? This can't be undone.`)) {
@@ -56,7 +54,6 @@ export function TaskDetailModal({
   return (
     <Modal onClose={onClose}>
       <div className="flex items-center gap-2">
-        <span className={`rounded-full border px-2 py-0.5 text-[11px] font-bold ${style.chip}`}>{style.label}</span>
         {task.syncedEventId ? (
           <span className="rounded-full bg-sage px-2 py-0.5 text-[11px] font-bold text-sage-dark">
             synced to {task.syncedProvider ? CALENDAR_PROVIDER_NAMES[task.syncedProvider] : "your calendar"}
