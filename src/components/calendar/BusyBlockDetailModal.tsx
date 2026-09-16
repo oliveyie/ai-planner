@@ -1,19 +1,29 @@
 "use client";
 
-import { Modal } from "@/src/components/ui/Modal";
+import { Popover } from "@/src/components/ui/Popover";
 import { CALENDAR_PROVIDER_NAMES } from "@/src/lib/providers/provider-labels";
 import { formatTimeLabel } from "@/src/lib/utils/date-utils";
 import type { BusyBlock } from "@/src/lib/utils/types";
 
 // View-only — BusyBlockChip's own header comment establishes these events are
 // read from a connected calendar with no update/delete API, so unlike
-// TaskDetailModal this has no edit or delete affordance.
-export function BusyBlockDetailModal({ block, onClose }: { block: BusyBlock; onClose: () => void }) {
+// TaskDetailModal this has no edit or delete affordance. Renders as a small
+// popover next to the clicked chip (anchorRect is that chip's own DOMRect),
+// same treatment as TaskDetailModal, rather than a full-screen centered modal.
+export function BusyBlockDetailModal({
+  block,
+  anchorRect,
+  onClose,
+}: {
+  block: BusyBlock;
+  anchorRect: DOMRect;
+  onClose: () => void;
+}) {
   const start = new Date(block.start);
   const end = new Date(block.end);
 
   return (
-    <Modal onClose={onClose}>
+    <Popover anchorRect={anchorRect} onClose={onClose}>
       <div className="flex items-center gap-2">
         <span
           className="h-3 w-3 shrink-0 rounded-full"
@@ -35,6 +45,6 @@ export function BusyBlockDetailModal({ block, onClose }: { block: BusyBlock; onC
       </p>
 
       <p className="text-xs text-clay-light">Synced from {CALENDAR_PROVIDER_NAMES[block.source]} — read-only.</p>
-    </Modal>
+    </Popover>
   );
 }

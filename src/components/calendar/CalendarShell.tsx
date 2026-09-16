@@ -42,8 +42,8 @@ export function CalendarShell({
   googleTasksError?: boolean;
   onNewGoal?: () => void;
   onPush?: (provider: CalendarProvider) => Promise<void>;
-  onSelectTask?: (task: Task) => void;
-  onSelectBusyBlock?: (block: BusyBlock) => void;
+  onSelectTask?: (task: Task, anchorRect: DOMRect) => void;
+  onSelectBusyBlock?: (block: BusyBlock, anchorRect: DOMRect) => void;
   onToggleGoogleTask?: (taskId: string) => void;
   hideHeader?: boolean;
 }) {

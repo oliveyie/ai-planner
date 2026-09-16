@@ -88,8 +88,23 @@ export function PlannerApp() {
   const [loading, setLoading] = useState(true);
   // Set by clicking a task/busy block chip anywhere on the calendar
   // (WeekView/MonthView/the Agenda tab) — opens TaskDetailModal/BusyBlockDetailModal.
+  // selectedTaskAnchorRect is the clicked chip's own DOMRect, so
+  // TaskDetailModal can render as a small popover next to it instead of a
+  // full-screen centered modal.
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
+  const [selectedTaskAnchorRect, setSelectedTaskAnchorRect] = useState<DOMRect | null>(null);
   const [selectedBusyBlock, setSelectedBusyBlock] = useState<BusyBlock | null>(null);
+  const [selectedBusyBlockAnchorRect, setSelectedBusyBlockAnchorRect] = useState<DOMRect | null>(null);
+
+  function handleSelectBusyBlock(block: BusyBlock, anchorRect: DOMRect) {
+    setSelectedBusyBlock(block);
+    setSelectedBusyBlockAnchorRect(anchorRect);
+  }
+
+  function closeBusyBlockDetail() {
+    setSelectedBusyBlock(null);
+    setSelectedBusyBlockAnchorRect(null);
+  }
   // The Agenda tab's todo-list sidebar (Google Tasks — a separate API/scope
   // from Google Calendar). Fetched once a Google connection exists,
   // independent of whether a goal/plan exists yet, since tasks aren't tied
@@ -498,15 +513,19 @@ export function PlannerApp() {
               connections={connections}
               googleTasks={googleTasks}
               googleTasksError={googleTasksError}
-              onSelectBusyBlock={setSelectedBusyBlock}
+              onSelectBusyBlock={handleSelectBusyBlock}
               onToggleGoogleTask={handleToggleGoogleTask}
             />
             {showConnectModal && <ConnectCalendarScreen onSkip={handleSkipConnect} />}
           </main>
         </div>
 
-        {selectedBusyBlock && (
-          <BusyBlockDetailModal block={selectedBusyBlock} onClose={() => setSelectedBusyBlock(null)} />
+        {selectedBusyBlock && selectedBusyBlockAnchorRect && (
+          <BusyBlockDetailModal
+            block={selectedBusyBlock}
+            anchorRect={selectedBusyBlockAnchorRect}
+            onClose={closeBusyBlockDetail}
+          />
         )}
       </>
     );
@@ -564,8 +583,11 @@ export function PlannerApp() {
                 googleTasks={googleTasks}
                 googleTasksError={googleTasksError}
                 onPush={handlePush}
-                onSelectTask={(task) => setSelectedTaskId(task.id)}
-                onSelectBusyBlock={setSelectedBusyBlock}
+                onSelectTask={(task, anchorRect) => {
+                  setSelectedTaskId(task.id);
+                  setSelectedTaskAnchorRect(anchorRect);
+                }}
+                onSelectBusyBlock={handleSelectBusyBlock}
                 onToggleGoogleTask={handleToggleGoogleTask}
                 hideHeader
               />
@@ -574,21 +596,30 @@ export function PlannerApp() {
         </DndContext>
 
         {selectedTaskId &&
+          selectedTaskAnchorRect &&
           (() => {
             const selectedTask = flattenTasks(plan).find((t) => t.id === selectedTaskId);
             if (!selectedTask) return null;
             return (
               <TaskDetailModal
                 task={selectedTask}
+                anchorRect={selectedTaskAnchorRect}
                 onSave={handleSaveSelectedTask}
                 onDelete={handleDeleteSelectedTask}
-                onClose={() => setSelectedTaskId(null)}
+                onClose={() => {
+                  setSelectedTaskId(null);
+                  setSelectedTaskAnchorRect(null);
+                }}
               />
             );
           })()}
 
-        {selectedBusyBlock && (
-          <BusyBlockDetailModal block={selectedBusyBlock} onClose={() => setSelectedBusyBlock(null)} />
+        {selectedBusyBlock && selectedBusyBlockAnchorRect && (
+          <BusyBlockDetailModal
+            block={selectedBusyBlock}
+            anchorRect={selectedBusyBlockAnchorRect}
+            onClose={closeBusyBlockDetail}
+          />
         )}
       </div>
     </>

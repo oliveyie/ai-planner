@@ -14,7 +14,9 @@ export function BusyBlockChip({
 }: {
   block: BusyBlock;
   compact?: boolean;
-  onClick?: (block: BusyBlock) => void;
+  // Passed the clicked chip's own DOMRect so the caller can open a popover
+  // anchored next to it, rather than a full-screen centered modal.
+  onClick?: (block: BusyBlock, anchorRect: DOMRect) => void;
   className?: string;
 }) {
   const start = new Date(block.start);
@@ -26,7 +28,7 @@ export function BusyBlockChip({
       className={`rounded-lg border border-dashed border-clay-light/40 bg-surface-low/60 px-1.5 py-1 text-[11px] text-clay ${onClick ? "cursor-pointer" : ""} ${className}`}
       style={{ borderLeftWidth: 3, borderLeftColor: block.color, borderLeftStyle: "solid" }}
       title={block.calendarName}
-      onClick={onClick ? () => onClick(block) : undefined}
+      onClick={onClick ? (e) => onClick(block, e.currentTarget.getBoundingClientRect()) : undefined}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={
@@ -34,7 +36,7 @@ export function BusyBlockChip({
           ? (e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                onClick(block);
+                onClick(block, e.currentTarget.getBoundingClientRect());
               }
             }
           : undefined

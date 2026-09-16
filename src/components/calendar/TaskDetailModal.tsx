@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Modal } from "@/src/components/ui/Modal";
+import { Popover } from "@/src/components/ui/Popover";
 import { CALENDAR_PROVIDER_NAMES } from "@/src/lib/providers/provider-labels";
 import { formatTimeLabel, parseISODate, parseISODateTime } from "@/src/lib/utils/date-utils";
 import type { Task } from "@/src/lib/utils/types";
@@ -9,16 +9,19 @@ import { TaskEditFields } from "./TaskEditFields";
 
 // Opened by clicking a task chip anywhere on the calendar (WeekView, MonthView,
 // the Agenda tab) — same save/delete contract as EditableTaskRow (the plan
-// card's inline editor), just presented as a modal instead of a list row, so
-// clicking a task on the calendar itself gives the same editing power without
-// having to go find it in the plan card.
+// card's inline editor). Renders as a small popover next to the clicked chip
+// (anchorRect is that chip's own DOMRect) rather than a full-screen centered
+// modal — a task detail reads better appearing right where you clicked than
+// taking over the screen.
 export function TaskDetailModal({
   task,
+  anchorRect,
   onSave,
   onDelete,
   onClose,
 }: {
   task: Task;
+  anchorRect: DOMRect;
   onSave: (task: Task) => void;
   onDelete: (taskId: string) => void;
   onClose: () => void;
@@ -37,7 +40,7 @@ export function TaskDetailModal({
 
   if (editing) {
     return (
-      <Modal onClose={onClose}>
+      <Popover anchorRect={anchorRect} onClose={onClose}>
         <TaskEditFields
           task={task}
           onSave={(updated) => {
@@ -47,12 +50,12 @@ export function TaskDetailModal({
           }}
           onCancel={() => setEditing(false)}
         />
-      </Modal>
+      </Popover>
     );
   }
 
   return (
-    <Modal onClose={onClose}>
+    <Popover anchorRect={anchorRect} onClose={onClose}>
       <div className="flex items-center gap-2">
         {task.syncedEventId ? (
           <span className="rounded-full bg-sage px-2 py-0.5 text-[11px] font-bold text-sage-dark">
@@ -97,6 +100,6 @@ export function TaskDetailModal({
           delete
         </button>
       </div>
-    </Modal>
+    </Popover>
   );
 }

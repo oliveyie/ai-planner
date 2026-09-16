@@ -42,7 +42,7 @@ export function EmptyCalendarPreview({
   connections?: CalendarConnection[];
   googleTasks?: GoogleTask[];
   googleTasksError?: boolean;
-  onSelectBusyBlock?: (block: BusyBlock) => void;
+  onSelectBusyBlock?: (block: BusyBlock, anchorRect: DOMRect) => void;
   onToggleGoogleTask?: (taskId: string) => void;
 }) {
   const [view, setView] = useState<ViewMode>("week");
@@ -108,12 +108,6 @@ export function EmptyCalendarPreview({
     <div className={dimmed ? "pointer-events-none select-none opacity-40 blur-[1px]" : ""}>
       <div className="mb-6 flex flex-wrap items-center justify-between gap-4 pb-2">
         <div className="flex items-center gap-2">
-          <button
-            onClick={goToToday}
-            className="rounded-full border border-[#eee4d5] bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition-colors hover:bg-slate-50"
-          >
-            Today
-          </button>
           <div className="flex items-center rounded-full border border-[#eee4d5] bg-white px-3 py-1.5 text-sm font-bold text-slate-700 shadow-xs">
             <button
               aria-label="Previous"
@@ -131,6 +125,12 @@ export function EmptyCalendarPreview({
               →
             </button>
           </div>
+          <button
+              onClick={goToToday}
+              className="rounded-full border border-[#eee4d5] bg-white px-3.5 py-1.5 text-xs font-bold text-slate-700 shadow-xs transition-colors hover:bg-slate-50"
+            >
+            Today
+          </button>
         </div>
 
         <div className="flex items-center rounded-full border border-[#ede3d3] bg-[#f8f5ee] p-1 text-xs font-bold text-slate-400">

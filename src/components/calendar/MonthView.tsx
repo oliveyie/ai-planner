@@ -28,8 +28,8 @@ function DroppableMonthCell({
   dayNumber: number;
   tasks: Task[];
   busyBlocks: BusyBlock[];
-  onSelectTask?: (task: Task) => void;
-  onSelectBusyBlock?: (block: BusyBlock) => void;
+  onSelectTask?: (task: Task, anchorRect: DOMRect) => void;
+  onSelectBusyBlock?: (block: BusyBlock, anchorRect: DOMRect) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: `monthcol:${dateKey}`, data: { date: dateKey } });
   const visible = tasks.slice(0, MAX_VISIBLE);
@@ -38,26 +38,17 @@ function DroppableMonthCell({
   return (
     <div
       ref={setNodeRef}
-      className={`flex min-h-24 flex-col gap-1 rounded-2xl p-2 ${
+      className={`flex min-h-24 flex-col gap-1 rounded-2xl border p-2 ${
         isOver
-          ? "border-2 border-coral bg-peach/40"
+          ? "border-coral bg-peach/40"
           : isToday
-            ? "border-2 border-coral/50 bg-buttercup/50 shadow-sm"
+            ? "border-[#EDE2D4]/40 bg-buttercup/60"
             : inMonth
-              ? "border border-[#EDE2D4]/40 bg-surface-low/40"
-              : "border border-transparent bg-surface-low/20 opacity-40"
+              ? "border-[#EDE2D4]/40 bg-surface-low/40"
+              : "border-transparent bg-surface-low/20 opacity-40"
       }`}
     >
-      {isToday ? (
-        <div className="flex items-center justify-between">
-          <span className="text-[10px] font-bold uppercase text-coral">Today</span>
-          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-coral text-[11px] font-bold text-white">
-            {dayNumber}
-          </span>
-        </div>
-      ) : (
-        <span className="text-xs font-bold text-foreground">{dayNumber}</span>
-      )}
+      <span className={`text-xs font-bold ${isToday ? "text-coral" : "text-foreground"}`}>{dayNumber}</span>
       <div className="flex flex-col gap-1">
         {busyBlocks.map((block, i) => (
           <BusyBlockChip key={`busy-${i}`} block={block} onClick={onSelectBusyBlock} />
@@ -81,8 +72,8 @@ export function MonthView({
   anchorDate: Date;
   tasksByDate: Map<string, Task[]>;
   busyBlocksByDate?: Map<string, BusyBlock[]>;
-  onSelectTask?: (task: Task) => void;
-  onSelectBusyBlock?: (block: BusyBlock) => void;
+  onSelectTask?: (task: Task, anchorRect: DOMRect) => void;
+  onSelectBusyBlock?: (block: BusyBlock, anchorRect: DOMRect) => void;
 }) {
   const monthStart = startOfMonth(anchorDate);
   const gridStart = startOfWeek(monthStart);

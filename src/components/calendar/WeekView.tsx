@@ -55,8 +55,8 @@ function DroppableDayColumn({
   pxPerHour: number;
   pxPerMinute: number;
   positioned: PositionedGridEntry[];
-  onSelectTask?: (task: Task) => void;
-  onSelectBusyBlock?: (block: BusyBlock) => void;
+  onSelectTask?: (task: Task, anchorRect: DOMRect) => void;
+  onSelectBusyBlock?: (block: BusyBlock, anchorRect: DOMRect) => void;
 }) {
   const { setNodeRef, isOver } = useDroppable({
     id: `daycol:${dateKey}`,
@@ -111,8 +111,8 @@ export function WeekView({
   anchorDate: Date;
   tasksByDate?: Map<string, Task[]>;
   busyBlocksByDate?: Map<string, BusyBlock[]>;
-  onSelectTask?: (task: Task) => void;
-  onSelectBusyBlock?: (block: BusyBlock) => void;
+  onSelectTask?: (task: Task, anchorRect: DOMRect) => void;
+  onSelectBusyBlock?: (block: BusyBlock, anchorRect: DOMRect) => void;
   // Both let the "bigger calendar" expanded modal render a taller, roomier
   // grid instead of just a bigger empty frame around the same-size content.
   pxPerHour?: number;

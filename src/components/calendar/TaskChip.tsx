@@ -14,7 +14,9 @@ export function TaskChip({
 }: {
   task: Task;
   compact?: boolean;
-  onClick?: (task: Task) => void;
+  // Passed the clicked chip's own DOMRect so the caller can open a popover
+  // anchored next to it, rather than a full-screen centered modal.
+  onClick?: (task: Task, anchorRect: DOMRect) => void;
   draggableId?: string;
   className?: string;
 }) {
@@ -33,7 +35,7 @@ export function TaskChip({
     <div
       ref={draggableId ? setNodeRef : undefined}
       {...(draggableId ? { ...listeners, ...attributes } : {})}
-      onClick={onClick ? () => onClick(task) : undefined}
+      onClick={onClick ? (e) => onClick(task, e.currentTarget.getBoundingClientRect()) : undefined}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={
@@ -41,7 +43,7 @@ export function TaskChip({
           ? (e) => {
               if (e.key === "Enter" || e.key === " ") {
                 e.preventDefault();
-                onClick(task);
+                onClick(task, e.currentTarget.getBoundingClientRect());
               }
             }
           : undefined
